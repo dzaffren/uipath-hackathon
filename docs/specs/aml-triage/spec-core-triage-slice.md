@@ -276,3 +276,461 @@ Examples:
   evidence is a deferred backlog beat outside this slice.
 - [x] ~~Does signing to agree require a written reason like an override does?~~ —
   **Resolved:** no. Overriding requires a recorded reason; signing to agree does not.
+
+---
+
+> **Technical sections (appended by `prd-refine`).** Everything above this line is the
+> product-owner-approved business content and is unchanged. Everything below is the
+> implementation contract for a developer or a `/build` subagent. This story is the
+> **vertical-slice spine**: it stands up the solution, the agent, the three API Workflows,
+> the five Data Fabric entities this slice writes, and the medium-path BPMN flow. Later
+> stories (red-flag override, challenger, low-risk batch) extend this scaffolding rather
+> than re-create it. All shared entities, contracts, error codes, and conventions live in
+> the epic overview's **# Technical Architecture (Shared)** section
+> ([spec.md](spec.md)) and are referenced — never redefined — here.
+
+## Functional Requirements
+
+| # | Requirement | Detail | Maps to AC |
+| - | ----------- | ------ | ---------- |
+| FR-1 | Evidence bundle assembled before the human sees the alert | `EvidenceGatherApi/EvidenceGather.json` runs first in the BPMN and must produce all four `EvidenceItem` categories (`customer_profile`, `transaction_history`, `screening`, `adverse_media`) before the `userTask` is reachable. A category that genuinely returns nothing is written as an `EvidenceItem` with `IsNoResult = true` (`EVIDENCE_NO_RESULT`), never omitted. | Business Rules §1; Workflow 2 |
+| FR-2 | Recommendation cites only gathered ids | The agent's `citations[]` may contain only `evidence_id` strings present in the bundle handed to it. Enforced by the system-prompt output contract and **backstopped** by the deterministic validator (FR-3); the LLM is never trusted to self-police. | Business Rules §2 |
+| FR-3 | Unverifiable citations flagged before the human | `DecisionGateApi/DecisionGate.json` `JsInvoke` validator checks **every** cited id against the bundle's stable `EvidenceId` set: present → `verified`; absent → `unverified_flagged` (`CITATION_UNVERIFIED`). One `CitationCheck` row per cited id. The HITL read-only `CitationCheck` field surfaces every flagged citation with a warning before the investigator reads the recommendation as trustworthy. | Business Rules §3; Workflow 4; "unverifiable citation" scenario |
+| FR-4 | One decision only, via sign or override (atomicity) | The medium-path disposition exists only as the result of the `Actions.HITL` `userTask` completing with outcome `sign` or `override`. If the task is abandoned (never completed), **no `DecisionRecord` is written and no `FinalDisposition` is set** — the alert stays open. `AuditWriteApi` is wired downstream of the `userTask` only, so an abandoned task cannot reach it. | Business Rules §4; "cannot complete without one valid action" scenario |
+| FR-5 | Override always carries a reason | The `override` outcome requires the `overrideReason` output text field; an empty value raises `OVERRIDE_REASON_REQUIRED` and the task cannot complete. `sign` requires no reason. | Business Rules §5; "override" scenario |
+| FR-6 | Exactly one `DecisionRecord` per alert (idempotency) | `AuditWriteApi/AuditWrite.json` queries for an existing `DecisionRecord` whose `AlertLink` matches the alert's `Id` before inserting; if one exists, it returns the existing record id without inserting (re-runs do not double-write). Combined with the append-only convention (no update/delete), each alert reconstructs to exactly one record. | Business Rules §6; "complete record" scenario outline |
+| FR-7 | Confidence floor (this story's gate scope) | `DecisionGate` applies the confidence-floor check only (a `low` call < 85 routes to a human → `medium_signoff`; `CONFIDENCE_BELOW_FLOOR`). **Red-flag evaluation is out of scope here** and is added to the same gate by the red-flag story. For this slice every alert resolves to `Var_Route = "medium_signoff"`. | Non-Goals; shared gate rules |
+
+## Permissions & Security
+
+- **Investigator role for the Action Center task.** The `Actions.HITL` `userTask` is assigned
+  to the named investigator user/group (demo: Priya, in the single `AuroraVerdict` folder).
+  Assignment is set on the `userTask` (assignee binding) so only an authorised investigator
+  can sign/override; the accountable name is read back from the completed task into
+  `DecisionRecord.DecisionMakerName`. No anonymous or unassigned disposition is possible.
+- **Input validation on API Workflow inputs.** Each workflow's first `WorkflowStart` step is
+  followed by a `JsInvoke` guard that validates `$workflow.input`: `EvidenceGather` requires a
+  non-empty `alert_reference` matching `^ALERT-\d{4}-\d{4}$` and a dataset row that resolves
+  (no row → `EVIDENCE_NO_RESULT` is reserved for empty *categories*, while a wholly missing
+  alert raises a hard `Response` error, not a partial bundle); `DecisionGate` requires
+  `evidence_bundle[]` and `agent_output` to be present and well-formed JSON; `AuditWrite`
+  requires `alert_id` (UUID), `human_action ∈ {signed_agree, override}`, and a non-empty
+  `override_reason` when `human_action = override` (`OVERRIDE_REASON_REQUIRED`).
+- **The LLM cannot introduce evidence (validator backstop).** Even if prompt injection in
+  synthetic evidence text coerces the agent into citing a fabricated id (e.g. Cedar's invented
+  bribery report), the deterministic `DecisionGate` validator marks it `unverified_flagged`
+  and the human sees the warning — the agent's output never silently becomes truth. The
+  `prompt_injection` and `user_prompt_attacks` guardrails are enabled on `TriageAgent` as
+  defence-in-depth (confirm `Available` via `uip agent guardrails list`).
+- **Threat model:** see the overview **## Cross-cutting Threat Model**. This story adds the
+  first concrete attack surface instances (one Action Center form, three API Workflow inputs,
+  one agent prompt); deltas are itemised in the Threat Model Checklist below.
+
+## System Design
+
+The medium-path slice (this story) wires these components in the BPMN spine:
+
+| Step | BPMN node | Type | Calls |
+| ---- | --------- | ---- | ----- |
+| 1 | EvidenceGather | `bpmn:serviceTask` | `Orchestrator.ExecuteApiWorkflowAsync` → `EvidenceGatherApi/EvidenceGather.json` |
+| 2 | TriageAgent | `bpmn:serviceTask` | `Orchestrator.StartAgentJob` → `TriageAgent/agent.json` |
+| 3 | DecisionGate | `bpmn:serviceTask` | `Orchestrator.ExecuteApiWorkflowAsync` → `DecisionGateApi/DecisionGate.json` (citation validator + confidence floor only) |
+| 4 | Route | `bpmn:exclusiveGateway` on `=vars.Var_Route` | outgoing `bpmn:sequenceFlow` with `bpmn:conditionExpression` `=vars.Var_Route == "medium_signoff"` |
+| 5 | HITL sign/override | `bpmn:userTask` | `Actions.HITL` (QuickForm authored in the `.bpmn`) |
+| 6 | AuditWrite | `bpmn:serviceTask` | `Orchestrator.ExecuteApiWorkflowAsync` → `AuditWriteApi/AuditWrite.json` |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant BPMN as TriageOrchestrationBpmn
+    participant EG as EvidenceGather.json
+    participant AG as TriageAgent
+    participant DG as DecisionGate.json
+    participant GW as Var_Route gateway
+    participant H as Investigator (HITL)
+    participant AW as AuditWrite.json
+    participant DF as Data Fabric
+
+    BPMN->>EG: ExecuteApiWorkflowAsync(alert_reference)
+    EG->>DF: insert Alert + 4x EvidenceItem (IsNoResult where empty)
+    EG-->>BPMN: evidence_bundle[{evidence_id,category,summary,payload}]
+    BPMN->>AG: StartAgentJob(alert_reference, customer_name, evidence_bundle)
+    AG->>DF: insert AgentAssessment
+    AG-->>BPMN: {risk_tier, confidence, recommendation, rationale, citations[]}
+    BPMN->>DG: ExecuteApiWorkflowAsync(evidence_bundle, agent_output)
+    DG->>DF: insert CitationCheck per cited id (verified | unverified_flagged)
+    DG-->>BPMN: {validated_citations[], final_risk_tier, route:"medium_signoff"}
+    BPMN->>GW: evaluate =vars.Var_Route
+    GW->>H: medium branch → present recommendation + CitationCheck warnings
+    H-->>BPMN: outcome=sign (Continue) | override (+overrideReason)
+    BPMN->>AW: ExecuteApiWorkflowAsync(alert_id, human_action, override_reason, disposition)
+    AW->>DF: idempotent insert DecisionRecord (one per alert)
+    AW-->>BPMN: decision_record_id
+```
+
+**Tradeoffs.** Low-code Agent Builder over a coded agent ([ADR 001](../../adr/001-low-code-agent-builder-for-triage-and-challenger.md))
+keeps the reasoning step declarative (`outputSchema` + guardrails) for a solo build.
+API Workflow + Data Fabric over coded services ([ADR 002](../../adr/002-api-workflow-and-data-fabric-for-automation-and-audit-store.md))
+puts the deterministic gate and the audit store on the same low-code substrate so the gate
+(citation validity, confidence floor) is auditable and never delegated to the LLM.
+
+## Threat Model Checklist
+
+| Dimension | This story's delta |
+| --------- | ------------------ |
+| **Data classification** | N/A — see overview. Customers (Meridian Trading Ltd, Northwind Logistics Inc, Cedar Imports Ltd) and all evidence are synthetic; no PII, no real/anonymized-real data. |
+| **Attack surface** | First concrete instances of the overview's surfaces: one Action Center form (`Actions.HITL` QuickForm — human input fields `overrideReason`); three API Workflow inputs (validated per Permissions & Security); one agent prompt (synthetic evidence text is attacker-controlled in principle). No new public routes. |
+| **Authn/authz** | N/A — see overview, plus: the `userTask` is assigned to the named investigator; the disposition cannot be set by an unassigned actor; `DecisionMakerName` is read from the completed task, not free-typed. |
+| **Prompt injection / LLM tampering** | `prompt_injection` + `user_prompt_attacks` guardrails enabled on `TriageAgent`; the `DecisionGate` citation validator is the hard backstop (a hallucinated/injected citation → `unverified_flagged`, surfaced to the human). The gate only ever escalates (confidence floor), never resolves doubt downward. |
+| **Dependencies** | N/A — see overview. This story uses the `uipath-uipath-dataservice` IntSvc connector and the public SAML-D dataset (license attributed); no new third-party packages. |
+
+## API Design
+
+> All paths are under `AuroraVerdict/`. API Workflows follow the shared contract: each `do[]`
+> starts with `WorkflowStart`; inputs read via `$workflow.input.<name>`; logic in `JsInvoke`;
+> Data Fabric reached via the `uipath-uipath-dataservice` connector; a final `Response`
+> returns structured output. Run/validate with
+> `uip api-workflow run <file> --input-arguments '{...}'` / `uip api-workflow validate <file>`.
+
+### `EvidenceGatherApi/EvidenceGather.json`
+
+Request:
+```json
+{ "alert_reference": "ALERT-2026-0142" }
+```
+Response (Meridian Trading Ltd — note the explicit no-result adverse-media item):
+```json
+{
+  "alert_id": "8f2c1a90-3b44-4e7d-9a01-7c5e2d6f0011",
+  "alert_reference": "ALERT-2026-0142",
+  "customer_name": "Meridian Trading Ltd",
+  "evidence_bundle": [
+    { "evidence_id": "ALERT-2026-0142#EV-001", "category": "customer_profile",
+      "summary": "Incorporated 2014; licensed commodities trader; CDD refreshed 2025-11.",
+      "source_ref": "CDD/Meridian", "is_no_result": false },
+    { "evidence_id": "ALERT-2026-0142#EV-002", "category": "transaction_history",
+      "summary": "Three large cash deposits in the past 30 days; values RM40k–RM90k.",
+      "source_ref": "TXN/Meridian", "is_no_result": false },
+    { "evidence_id": "ALERT-2026-0142#EV-003", "category": "screening",
+      "summary": "Sanctions and PEP screening returned no match.",
+      "source_ref": "SCREEN/Meridian", "is_no_result": false },
+    { "evidence_id": "ALERT-2026-0142#EV-004", "category": "adverse_media",
+      "summary": "No adverse media found.",
+      "source_ref": "MEDIA/Meridian", "is_no_result": true }
+  ]
+}
+```
+
+### `DecisionGateApi/DecisionGate.json` (this story: citation validator + confidence floor only)
+
+Request:
+```json
+{
+  "alert_id": "8f2c1a90-3b44-4e7d-9a01-7c5e2d6f0011",
+  "evidence_bundle": [ { "evidence_id": "ALERT-2026-0142#EV-001" }, { "evidence_id": "ALERT-2026-0142#EV-002" }, { "evidence_id": "ALERT-2026-0142#EV-003" }, { "evidence_id": "ALERT-2026-0142#EV-004" } ],
+  "agent_output": { "risk_tier": "medium", "confidence": 78, "recommendation": "close",
+    "citations": ["ALERT-2026-0142#EV-002", "ALERT-2026-0142#EV-003"] }
+}
+```
+Response (Meridian — all verified, medium route):
+```json
+{
+  "validated_citations": [
+    { "evidence_id": "ALERT-2026-0142#EV-002", "outcome": "verified" },
+    { "evidence_id": "ALERT-2026-0142#EV-003", "outcome": "verified" }
+  ],
+  "has_unverified": false,
+  "final_risk_tier": "medium",
+  "route": "medium_signoff"
+}
+```
+Response (Cedar Imports Ltd — invented bribery-report citation flagged):
+```json
+{
+  "validated_citations": [
+    { "evidence_id": "ALERT-2026-0488#EV-003", "outcome": "verified" },
+    { "evidence_id": "ALERT-2026-0488#EV-009", "outcome": "unverified_flagged" }
+  ],
+  "has_unverified": true,
+  "final_risk_tier": "medium",
+  "route": "medium_signoff"
+}
+```
+> `ALERT-2026-0488#EV-009` is the agent-fabricated "2024 news report alleging bribery" id; it
+> is not in Cedar's bundle (Cedar gathered customer_profile, transaction_history, screening and
+> a no-result adverse_media item only), so the validator returns `unverified_flagged`
+> (`CITATION_UNVERIFIED`). Note: red-flag evaluation is **not** performed here — `final_risk_tier`
+> echoes the agent's tier passed through the confidence floor, and `route` is always
+> `medium_signoff` in this slice.
+
+### `AuditWriteApi/AuditWrite.json`
+
+Request (Northwind Logistics Inc — override to escalate):
+```json
+{
+  "alert_id": "1c0d77e2-55aa-4b10-8e22-9f3a1b6c0042",
+  "final_risk_tier": "medium",
+  "original_proposed_tier": "medium",
+  "route_taken": "medium_signoff",
+  "decision_maker_name": "Priya",
+  "human_action": "override",
+  "override_reason": "Repeated payments just under the reporting threshold to one counterparty — consistent with structuring; escalating for investigation",
+  "decision_timestamp": "2026-06-20T09:14:00+08:00",
+  "final_disposition": "escalated",
+  "disposition_timestamp": "2026-06-20T09:14:02+08:00"
+}
+```
+Response:
+```json
+{ "decision_record_id": "a77b1e34-9c52-4d8e-bb20-0f5e7c3d9981", "was_existing": false }
+```
+> Idempotency: on a re-run with the same `alert_id`, `AuditWrite` returns the existing
+> `decision_record_id` with `"was_existing": true` and inserts nothing. `DecisionRecord` is
+> never updated or deleted (append-only). For a `sign` decision, `human_action = "signed_agree"`,
+> `override_reason` is omitted, and `final_disposition = "closed"` (Meridian).
+
+### TriageAgent I/O (`TriageAgent/agent.json` → `outputSchema`)
+
+Input (handed by `Orchestrator.StartAgentJob`):
+```json
+{
+  "alert_reference": "ALERT-2026-0142",
+  "customer_name": "Meridian Trading Ltd",
+  "evidence_bundle": [
+    { "evidence_id": "ALERT-2026-0142#EV-002", "category": "transaction_history", "summary": "Three large cash deposits in the past 30 days.", "payload": "{...}" },
+    { "evidence_id": "ALERT-2026-0142#EV-003", "category": "screening", "summary": "Sanctions and PEP screening returned no match.", "payload": "{...}" }
+  ]
+}
+```
+Output (structured, conforms to overview's `outputSchema`):
+```json
+{
+  "risk_tier": "medium",
+  "confidence": 78,
+  "recommendation": "close",
+  "rationale": "Cash deposit pattern consistent with a licensed commodities trader; clean screening; no adverse media.",
+  "citations": ["ALERT-2026-0142#EV-002", "ALERT-2026-0142#EV-003"]
+}
+```
+
+### HITL task field schema + outcomes (`Actions.HITL` `userTask` in the `.bpmn`)
+
+`inputs.schema.fields[]`:
+```json
+[
+  { "id": "recommendation", "label": "Recommended call", "type": "text", "direction": "input" },
+  { "id": "riskTier",       "label": "Risk tier",        "type": "text", "direction": "input" },
+  { "id": "confidence",     "label": "Agent confidence (%)", "type": "number", "direction": "input" },
+  { "id": "rationale",      "label": "Rationale",        "type": "text", "direction": "input" },
+  { "id": "citationCheck",  "label": "Citation check (verified / unverified_flagged)", "type": "text", "direction": "input" },
+  { "id": "unverifiedWarning", "label": "⚠ Unverified citations — do not rely on flagged items", "type": "text", "direction": "input" },
+  { "id": "overrideReason", "label": "Override reason (required if overriding)", "type": "text", "direction": "output" }
+]
+```
+`outcomes[]`:
+```json
+[
+  { "id": "sign",     "name": "Sign — agree with recommendation", "isPrimary": true, "action": "Continue" },
+  { "id": "override", "name": "Override",                          "action": "End", "requires": ["overrideReason"] }
+]
+```
+Read-only fields bind to upstream vars (`recommendation`, `riskTier`, `confidence`,
+`rationale` from the agent output; `citationCheck`/`unverifiedWarning` from the gate's
+`validated_citations`/`has_unverified`). Runtime read-back:
+`$vars.<HitlNodeId>.status` = the chosen outcome id; `$vars.<HitlNodeId>.output.overrideReason`
+= the human-entered reason. `overrideReason` empty on `override` → `OVERRIDE_REASON_REQUIRED`.
+
+### Error table
+
+| Code | Message | Surfaced where |
+| ---- | ------- | -------------- |
+| `CITATION_UNVERIFIED` | "Cited evidence id not found in gathered bundle; flagged for review." | `DecisionGate` → `CitationCheck.CheckOutcome = unverified_flagged`, shown in HITL `citationCheck`/`unverifiedWarning`, preserved in record |
+| `OVERRIDE_REASON_REQUIRED` | "An override reason is required before the override can be accepted." | `Actions.HITL` (override outcome with empty `overrideReason`); `AuditWrite` input guard |
+| `EVIDENCE_NO_RESULT` | "Evidence category returned no result (explicit, not missing)." | `EvidenceGather` → `EvidenceItem.IsNoResult = true` (e.g. Meridian/Cedar adverse_media) |
+| `CONFIDENCE_BELOW_FLOOR` | "Low-risk call below 85% confidence routed to a human." | `DecisionGate` confidence-floor routing (gate scope of this story) |
+
+## Data Model & Migrations
+
+This story stands up five of the seven shared entities (defined in the overview's
+**## Shared Data Model**): `Alert`, `EvidenceItem`, `AgentAssessment`, `CitationCheck`,
+`DecisionRecord`. `RedFlagTrigger` and `BatchSignoff` are created by later stories. Create each
+with `uip df entities create "<Name>" --body '{...}' --output json`. The `--body` shape (fields
+beyond the system `Id`/`CreatedBy`/`CreateTime`/`UpdatedBy`/`UpdateTime`):
+
+```jsonc
+// Alert
+{ "displayName": "Alert", "fields": [
+  { "name": "AlertReference", "dataType": "STRING", "isUnique": true },
+  { "name": "AlertDate", "dataType": "DATE" },
+  { "name": "CustomerReference", "dataType": "STRING" },
+  { "name": "CustomerName", "dataType": "STRING" },
+  { "name": "AccountReference", "dataType": "STRING" },
+  { "name": "AggregateAmountMYR", "dataType": "DECIMAL" } ] }
+
+// EvidenceItem
+{ "displayName": "EvidenceItem", "fields": [
+  { "name": "EvidenceId", "dataType": "STRING", "isUnique": true },
+  { "name": "AlertLink", "dataType": "RELATIONSHIP", "referenceEntity": "Alert" },
+  { "name": "EvidenceCategory", "dataType": "CHOICE_SET_SINGLE",
+    "choiceSet": ["customer_profile", "transaction_history", "screening", "adverse_media"] },
+  { "name": "Summary", "dataType": "MULTILINE_TEXT" },
+  { "name": "SourceRef", "dataType": "STRING" },
+  { "name": "PayloadJson", "dataType": "MULTILINE_TEXT" },
+  { "name": "IsNoResult", "dataType": "BOOLEAN" } ] }
+
+// AgentAssessment
+{ "displayName": "AgentAssessment", "fields": [
+  { "name": "AlertLink", "dataType": "RELATIONSHIP", "referenceEntity": "Alert" },
+  { "name": "ProposedRiskTier", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["low","medium","high"] },
+  { "name": "Confidence", "dataType": "INTEGER" },
+  { "name": "Recommendation", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["escalate","close"] },
+  { "name": "Rationale", "dataType": "MULTILINE_TEXT" },
+  { "name": "CitedEvidenceIds", "dataType": "MULTILINE_TEXT" },
+  { "name": "ModelName", "dataType": "STRING" } ] }
+
+// CitationCheck
+{ "displayName": "CitationCheck", "fields": [
+  { "name": "AlertLink", "dataType": "RELATIONSHIP", "referenceEntity": "Alert" },
+  { "name": "CitedEvidenceId", "dataType": "STRING" },
+  { "name": "CheckOutcome", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["verified","unverified_flagged"] },
+  { "name": "ResolvedEvidenceLink", "dataType": "RELATIONSHIP", "referenceEntity": "EvidenceItem" } ] }
+
+// DecisionRecord (append-only by convention)
+{ "displayName": "DecisionRecord", "fields": [
+  { "name": "AlertLink", "dataType": "RELATIONSHIP", "referenceEntity": "Alert" },
+  { "name": "FinalRiskTier", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["low","medium","high"] },
+  { "name": "TierWasForced", "dataType": "BOOLEAN" },
+  { "name": "OriginalProposedTier", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["low","medium","high"] },
+  { "name": "RouteTaken", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["low_batch","medium_signoff","high_challenger"] },
+  { "name": "ChallengerOutcome", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["not_applicable","agreed","disagreed"] },
+  { "name": "ChallengerDispute", "dataType": "MULTILINE_TEXT" },
+  { "name": "DecisionMakerName", "dataType": "STRING" },
+  { "name": "HumanAction", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["signed_agree","override"] },
+  { "name": "OverrideReason", "dataType": "MULTILINE_TEXT" },
+  { "name": "DecisionTimestamp", "dataType": "DATETIME_WITH_TZ" },
+  { "name": "FinalDisposition", "dataType": "CHOICE_SET_SINGLE", "choiceSet": ["closed","escalated","sent_to_edd"] },
+  { "name": "DispositionTimestamp", "dataType": "DATETIME_WITH_TZ" },
+  { "name": "WasPulledForReview", "dataType": "BOOLEAN" } ] }
+```
+
+Notes:
+- **CHOICE_SET value-by-NumberId.** `uip df records insert`/`update` write `CHOICE_SET_SINGLE`
+  fields by the integer `NumberId` assigned to each choice value at create time — not the
+  string label. After `entities create`, resolve the mapping with
+  `uip df entities get "<Name>" --output json` and write the matching `NumberId` (e.g. for
+  `DecisionRecord.HumanAction`, `signed_agree`→its NumberId, `override`→its NumberId).
+- **Append-only `DecisionRecord`.** Inserts only; never `uip df records update`/`delete` on it.
+- **Relationships** (`AlertLink`, `ResolvedEvidenceLink`) store the parent record's `Id` UUID.
+  For this slice `DecisionRecord` leaves `TierWasForced=false`, `ChallengerOutcome=not_applicable`,
+  `ChallengerDispute`/`BatchSignoffLink` null, `WasPulledForReview=false` (those columns are
+  populated by later stories).
+- `DecisionRecord.BatchSignoffLink` (overview) depends on `BatchSignoff`, which the low-risk
+  batch story creates; omit it from this story's `DecisionRecord` create body and add it in that
+  story to avoid a forward reference.
+
+## Architecture Notes
+
+- **This is the spine others extend.** The solution, `TriageAgent`, the three API Workflows,
+  the five entities, and the medium-path BPMN flow stand up here. The red-flag story extends
+  `DecisionGate` (red-flag evaluation, `RedFlagTrigger`) and adds the high gateway branch; the
+  challenger story adds `ChallengerAgent` and the high-path nodes; the low-risk story adds
+  `BatchSignoff` and the low branch. None re-create the scaffolding.
+- **CLI-derived files are not hand-edited.** `bindings_v2.json`, `entry-points.json`,
+  `operate.json`, `package-descriptor.json`, and the solution `.uipx` manifest are produced and
+  reconciled by `uip … refresh` / `uip solution resources refresh` — never edited by hand
+  (overview Global Negative Constraints). The model-authored sources of record are the `.bpmn`,
+  the two `agent.json` files, and the three API Workflow `*.json`.
+- **Integration points.** Studio Web (agent eval runs and Maestro debug); the Data Fabric
+  Integration Service connector `uipath-uipath-dataservice` (all entity CRUD from the API
+  Workflows). One tenant, one folder (`AuroraVerdict`) for the demo.
+
+## Implementation Plan
+
+> Sizes: S ≤ ~2h, M ≈ half-day, L ≈ full day. INDEPENDENT tasks can be built in parallel once
+> their inputs exist; the BPMN wiring is SEQUENTIAL after the components it references exist.
+
+| # | Sub-task | Files / commands | Size | Dependency |
+| - | -------- | ---------------- | ---- | ---------- |
+| 1 | Initialise the solution | `uip solution init "AuroraVerdict" --output json` (fallback `uip solution new` if `unknown command`) | S | SEQUENTIAL (first) |
+| 2 | Scaffold the agent | `uip agent init "AuroraVerdict/TriageAgent" --output json`; `uip solution project add ./AuroraVerdict/TriageAgent` | S | SEQUENTIAL (after 1) |
+| 3 | Create the 5 Data Fabric entities | `uip df entities create` for `Alert`, `EvidenceItem`, `AgentAssessment`, `CitationCheck`, `DecisionRecord` (bodies above); then `uip df entities get` each to capture CHOICE_SET NumberIds | M | INDEPENDENT (after 1; EvidenceItem before CitationCheck for the relationship) |
+| 4 | Author `EvidenceGather.json` | `AuroraVerdict/EvidenceGatherApi/EvidenceGather.json` — `WorkflowStart` → input guard → CSV parse `JsInvoke` → bundle assembly with stable `EvidenceId`s + `IsNoResult` → insert `Alert`+`EvidenceItem`s via `uipath-uipath-dataservice` → `Response` | L | INDEPENDENT (after 3) |
+| 5 | Author `DecisionGate.json` (citation validator + confidence floor only) | `AuroraVerdict/DecisionGateApi/DecisionGate.json` — `WorkflowStart` → input guard → citation validator `JsInvoke` (every cited id ∈ bundle?) → insert `CitationCheck` rows → confidence-floor route `JsInvoke` (always `medium_signoff` here) → `Response`. No red-flag logic. | L | INDEPENDENT (after 3) |
+| 6 | Author `TriageAgent/agent.json` | `AuroraVerdict/TriageAgent/agent.json` — system prompt with the ID-only citation output contract; `outputSchema` = `{risk_tier, confidence, recommendation, rationale, citations[]}`; enable `prompt_injection` + `user_prompt_attacks` guardrails; model via `uip agent model list` (do not hardcode) | M | INDEPENDENT (after 2) |
+| 7 | Author `AuditWrite.json` | `AuroraVerdict/AuditWriteApi/AuditWrite.json` — `WorkflowStart` → input guard (override reason required) → idempotency query (existing `DecisionRecord` for `alert_id`?) → conditional insert (CHOICE_SET by NumberId) → `Response` | M | INDEPENDENT (after 3) |
+| 8 | Author the `.bpmn` medium slice + sign/override `userTask` | `AuroraVerdict/TriageOrchestrationBpmn/TriageOrchestrationBpmn.bpmn` — start → EvidenceGather `serviceTask` → TriageAgent `serviceTask` → DecisionGate `serviceTask` → `exclusiveGateway` on `=vars.Var_Route` → medium `sequenceFlow` (`=vars.Var_Route == "medium_signoff"`) → `Actions.HITL` `userTask` (field schema + sign/override outcomes above) → AuditWrite `serviceTask` → end | L | SEQUENTIAL (after 4–7 exist) |
+| 9 | Reconcile + package + deploy | `uip solution resources refresh`; `uip agent validate`; `uip api-workflow validate <each>`; `uip maestro bpmn validate <bpmn>`; `uip solution pack ./AuroraVerdict ./output -v <ver>`; `uip solution publish`; `uip solution deploy run …` | M | SEQUENTIAL (last) |
+
+## Negative Constraints
+
+- Do **not** implement red-flag evaluation, the challenger, or batch sign-off here — those are
+  the red-flag, maker–checker, and low-risk-batch stories. `DecisionGate` in this story does the
+  citation validator + confidence floor **only**; `RedFlagTrigger` and `BatchSignoff` entities are
+  not created here.
+- Do **not** let the LLM decide citation validity (or red flags / the confidence floor) — the
+  deterministic `DecisionGate` validator is authoritative (overview Global Negative Constraints).
+- Do **not** hand-edit CLI-derived files (`bindings_v2.json`, `entry-points.json`, `operate.json`,
+  `package-descriptor.json`, the `.uipx` manifest).
+- Do **not** `update` or `delete` `DecisionRecord` rows — append-only by convention; idempotency
+  is achieved by the pre-insert existence query, not by overwriting.
+- Do **not** use real or anonymized-real data; do **not** auto-file a regulatory report (the
+  system recommends, the human disposes).
+
+## Test Scenarios
+
+> Implementation-level checks against the written records, using the story's own customers.
+
+1. **Meridian close → sign (happy path).** Run the medium path for `ALERT-2026-0142`
+   (Meridian Trading Ltd, recommendation `close`, confidence 78, all citations verified);
+   complete the HITL with outcome `sign`. **Assert:** exactly one `DecisionRecord` for the
+   alert with `HumanAction = signed_agree`, `FinalDisposition = closed`, `DecisionMakerName`
+   populated, and `OverrideReason` null.
+2. **Northwind override → escalate.** Run the medium path for Northwind Logistics Inc
+   (recommendation `close`, confidence 71); complete the HITL with outcome `override` and reason
+   "Repeated payments just under the reporting threshold to one counterparty — consistent with
+   structuring; escalating for investigation". **Assert:** the `DecisionRecord` has
+   `HumanAction = override`, a non-empty `OverrideReason` matching the entered text, and
+   `FinalDisposition = escalated`; attempting `override` with an empty reason is rejected with
+   `OVERRIDE_REASON_REQUIRED` and no record is written.
+3. **Cedar invented-citation flagged.** Run `DecisionGate` for Cedar Imports Ltd where the agent
+   cites the fabricated "2024 news report alleging bribery" id (`ALERT-2026-0488#EV-009`, absent
+   from Cedar's bundle). **Assert:** a `CitationCheck` row exists with
+   `CheckOutcome = unverified_flagged` (`CITATION_UNVERIFIED`) for that id, the gate response has
+   `has_unverified = true`, and the HITL `unverifiedWarning` field is populated so the flag
+   reaches the human before they read the recommendation as trustworthy; the verified citations
+   still appear with `verified`.
+4. **Abandon without deciding.** Start the medium path for a Meridian alert and abandon the HITL
+   task without choosing `sign` or `override`. **Assert:** no `DecisionRecord` row and no
+   `FinalDisposition` exist for the alert; the alert remains open (atomicity — `AuditWrite` is
+   never reached).
+5. **Idempotent re-run.** Re-run `AuditWrite` with an already-recorded `alert_id`. **Assert:**
+   the row count of `DecisionRecord` for that alert stays at 1 and the response reports
+   `was_existing = true`.
+
+## Verification
+
+> No web E2E framework. Verify with the `uip` CLI against the running solution.
+
+- **EvidenceGather:**
+  `uip api-workflow run AuroraVerdict/EvidenceGatherApi/EvidenceGather.json --input-arguments '{"alert_reference":"ALERT-2026-0142"}'`
+  — expect four `EvidenceItem`s including one `is_no_result:true` adverse_media item.
+- **DecisionGate (verified):**
+  `uip api-workflow run AuroraVerdict/DecisionGateApi/DecisionGate.json --input-arguments '{"alert_id":"<meridian-id>","evidence_bundle":[{"evidence_id":"ALERT-2026-0142#EV-002"},{"evidence_id":"ALERT-2026-0142#EV-003"}],"agent_output":{"risk_tier":"medium","confidence":78,"recommendation":"close","citations":["ALERT-2026-0142#EV-002","ALERT-2026-0142#EV-003"]}}'`
+  — expect `has_unverified:false`, `route:"medium_signoff"`.
+- **DecisionGate (flagged):** same command for Cedar with `citations` including
+  `ALERT-2026-0488#EV-009` — expect that id `unverified_flagged`, `has_unverified:true`.
+- **AuditWrite (idempotency):** run with a Northwind override payload, then re-run the identical
+  payload — expect `was_existing:false` then `was_existing:true`.
+- **Agent:** `uip agent debug` with a Meridian evidence-bundle input — expect structured output
+  conforming to the `outputSchema` and citations drawn only from the supplied bundle.
+- **End-to-end medium path:** `uip maestro bpmn debug AuroraVerdict/TriageOrchestrationBpmn/TriageOrchestrationBpmn.bpmn --inputs @inputs.json`
+  (where `inputs.json` carries `{"alert_reference":"ALERT-2026-0142"}`) — drive the HITL to
+  `sign`, confirm the flow reaches AuditWrite and ends.
+- **Record assertions:**
+  `uip df records query "DecisionRecord" --filter "AlertLink eq <meridian-id>"` — expect exactly
+  one row with `HumanAction = signed_agree`, `FinalDisposition = closed`;
+  `uip df records query "DecisionRecord" --filter "AlertLink eq <northwind-id>"` — one row,
+  `HumanAction = override`, non-empty `OverrideReason`, `FinalDisposition = escalated`;
+  `uip df records query "CitationCheck" --filter "AlertLink eq <cedar-id>"` — a row with
+  `CheckOutcome = unverified_flagged`; and after the abandon test,
+  `uip df records query "DecisionRecord" --filter "AlertLink eq <abandoned-id>"` returns zero rows.

@@ -206,3 +206,403 @@ These rules apply across every story and define the standard each alert is held 
 - [ ] Missing-evidence loop-back and service-level-agreement escalation timer — **Deferred
   (non-blocking):** valuable but build-heavy; included in the ranked backlog and layered
   only if the committed stories land with time to spare.
+
+---
+
+# Technical Architecture (Shared)
+
+> This section is the **frozen contract** for every story in the epic. Each story spec adds
+> only its story-specific technical sections and references the entities, schemas, and
+> conventions defined here. Change it here once, not five times.
+>
+> **Platform decisions (with ADRs):** low-code Agent Builder agents
+> ([ADR 001](../../adr/001-low-code-agent-builder-for-triage-and-challenger.md));
+> API Workflow + Data Fabric for automation and the audit store
+> ([ADR 002](../../adr/002-api-workflow-and-data-fabric-for-automation-and-audit-store.md));
+> custom precision/recall scoring over agent eval exports
+> ([ADR 003](../../adr/003-custom-precision-recall-scoring.md)); batch sign-off via a summary
+> HITL task plus individual pull-outs
+> ([ADR 004](../../adr/004-batch-signoff-modeling.md)); failure-handling posture
+> ([ADR 005](../../adr/005-failure-handling-posture.md)).
+
+## Component Map
+
+| # | Component | UiPath product | Artifact | Responsibility |
+| - | --------- | -------------- | -------- | -------------- |
+| 1 | **Triage orchestration** | Maestro BPMN (`ProcessOrchestration`) | `TriageOrchestrationBpmn/TriageOrchestrationBpmn.bpmn` | The spine. Risk-tier gateway, agent task, deterministic-gate task, HITL tasks, audit-write task, plus a deferred SLA boundary-timer **stub** (not built — see deferred beats below). |
+| 2 | **Triage agent** | Agent Builder (low-code) | `TriageAgent/agent.json` | LLM reasoning → `{risk_tier, confidence, recommendation, rationale, citations[]}` (structured output). |
+| 3 | **Challenger agent** | Agent Builder (low-code) | `ChallengerAgent/agent.json` | Independent agree/disagree review on the high-risk path → `{position, disputed_point, reasoning, citations[]}`. |
+| 4 | **Evidence-gather API Workflow** | API Workflow (`Api`) | `EvidenceGatherApi/EvidenceGather.json` | Read dataset row, assemble ID'd evidence bundle, inject synthetic sanctions/PEP, persist `Alert` + `EvidenceItem`s. |
+| 5 | **Deterministic-gate API Workflow** | API Workflow (`Api`) | `DecisionGateApi/DecisionGate.json` | Citation validator + red-flag evaluation + confidence floor. No LLM. |
+| 6 | **Audit-write API Workflow** | API Workflow (`Api`) | `AuditWriteApi/AuditWrite.json` | Write the `DecisionRecord` (+ `CitationCheck`, `RedFlagTrigger`, `BatchSignoff` rows). Append-only by convention. |
+| 7 | **Human review** | Action Center (HITL) | `bpmn:userTask` nodes in the BPMN | Medium sign/override; high senior/EDD sign-off; low-risk batch + individual review. |
+| 8 | **Case + audit store** | Data Fabric | entities (below) | Replayable case data and the audit-ready decision record. |
+| 9 | **Deliverable bundle** | Solution | `AuroraVerdict/AuroraVerdict.uipx` | Packs components 1–6 + Data Fabric resources into one deployable `.uipx`. |
+
+> **Out of technical scope (deferred beats):** missing-evidence loop-back, SLA escalation
+> timer (a boundary `bpmn:timerEventDefinition` is left as a stub), and the live
+> adverse-media / Integration Service connector. Not specced below.
+
+## Repository & Solution Layout
+
+```
+uipath-hackathon/
+├── AuroraVerdict/                       # solution root (uip solution init)
+│   ├── AuroraVerdict.uipx               # solution manifest (project list + IDs)
+│   ├── TriageOrchestrationBpmn/         # ProcessOrchestration project
+│   │   ├── TriageOrchestrationBpmn.bpmn # MODEL-AUTHORED source of record
+│   │   ├── project.uiproj
+│   │   └── entry-points.json | bindings_v2.json | operate.json | package-descriptor.json   # CLI-derived
+│   ├── TriageAgent/                     # agent.json (lowCode) + entry-points.json + evals/
+│   ├── ChallengerAgent/                 # agent.json (lowCode)
+│   ├── EvidenceGatherApi/               # API Workflow (type "Api")
+│   ├── DecisionGateApi/
+│   └── AuditWriteApi/
+├── data/
+│   ├── SAML-D.csv                       # public synthetic dataset (substrate)
+│   └── evidence-overlay.json            # engineered sanctions/PEP/watchlist/jurisdiction overlay
+├── golden-set/
+│   ├── scenarios/                       # 8–12 curated cases + known-correct labels
+│   └── score.py                         # custom precision/recall + rubric scorer (ADR 003)
+└── docs/                               # specs, adr, discovery, poc (existing)
+```
+
+**Dataset default:** SAML-D (`berkanoztas/synthetic-transaction-monitoring-dataset-aml`),
+single CSV, license confirmed on its Kaggle license tab before use. IBM Transactions for
+AML (CDLA-Sharing-1.0) is a drop-in alternative — the engineered overlay isolates the rest
+of the system from the choice. **No real or anonymized-real data.** Amounts normalized to MYR.
+
+## Shared Data Model — Data Fabric entities
+
+> Field types are the exact Data Fabric `EntityFieldDataType` (UPPERCASE). Every entity also
+> has system fields `Id` (UUID, stable record identifier), `CreatedBy`, `CreateTime`,
+> `UpdatedBy`, `UpdateTime`. Reserved names (`Status`, `Type`, `Case`, `User`, `Role`,
+> `Order`, system-field names) are avoided. `CHOICE_SET_SINGLE` values are written by integer
+> `NumberId`. Relationships store the parent record's `Id` UUID.
+
+**`Alert`** — one incoming alert.
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `AlertReference` | STRING | unique business key, e.g. `ALERT-2026-0142` |
+| `AlertDate` | DATE | |
+| `CustomerReference` | STRING | |
+| `CustomerName` | STRING | demo value, e.g. `Meridian Trading Ltd` |
+| `AccountReference` | STRING | |
+| `AggregateAmountMYR` | DECIMAL | for the high-value threshold |
+
+**`EvidenceItem`** — one ID'd item in the bundle (the citation target).
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `EvidenceId` | STRING | **stable citation ID**, e.g. `ALERT-2026-0142#EV-003`, unique |
+| `AlertLink` | RELATIONSHIP → `Alert` | |
+| `EvidenceCategory` | CHOICE_SET_SINGLE | `customer_profile` / `transaction_history` / `screening` / `adverse_media` |
+| `Summary` | MULTILINE_TEXT | human-readable |
+| `SourceRef` | STRING | where it came from |
+| `PayloadJson` | MULTILINE_TEXT | structured detail (JSON-as-text; `FILE` upload via CLI is broken) |
+| `IsNoResult` | BOOLEAN | explicit "no result" (e.g. no adverse media) vs missing |
+
+**`AgentAssessment`** — the agent's recommendation (the "maker").
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `AlertLink` | RELATIONSHIP → `Alert` | |
+| `ProposedRiskTier` | CHOICE_SET_SINGLE | `low` / `medium` / `high` |
+| `Confidence` | INTEGER | 0–100 (bound prompt-enforced, validated by the gate) |
+| `Recommendation` | CHOICE_SET_SINGLE | `escalate` / `close` |
+| `Rationale` | MULTILINE_TEXT | |
+| `CitedEvidenceIds` | MULTILINE_TEXT | JSON array of `EvidenceId` strings |
+| `ModelName` | STRING | model used (provenance) |
+
+**`CitationCheck`** — per-citation validator outcome.
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `AlertLink` | RELATIONSHIP → `Alert` | |
+| `CitedEvidenceId` | STRING | the id the agent cited |
+| `CheckOutcome` | CHOICE_SET_SINGLE | `verified` / `unverified_flagged` |
+| `ResolvedEvidenceLink` | RELATIONSHIP → `EvidenceItem` | null when unverified |
+
+**`RedFlagTrigger`** — one row per trigger that fired.
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `AlertLink` | RELATIONSHIP → `Alert` | |
+| `TriggerKind` | CHOICE_SET_SINGLE | `sanctions` / `pep` / `structuring` / `jurisdiction` / `watchlist` |
+| `TriggerDetail` | STRING | e.g. `Sanctions match on counterparty Volkov Holdings` |
+
+**`DecisionRecord`** — the audit-ready record (append-only by convention).
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `AlertLink` | RELATIONSHIP → `Alert` | |
+| `FinalRiskTier` | CHOICE_SET_SINGLE | `low` / `medium` / `high` |
+| `TierWasForced` | BOOLEAN | red flag forced the tier |
+| `OriginalProposedTier` | CHOICE_SET_SINGLE | the agent's tier before override |
+| `RouteTaken` | CHOICE_SET_SINGLE | `low_batch` / `medium_signoff` / `high_challenger` |
+| `ChallengerOutcome` | CHOICE_SET_SINGLE | `not_applicable` / `agreed` / `disagreed` |
+| `ChallengerDispute` | MULTILINE_TEXT | null unless disagreed |
+| `DecisionMakerName` | STRING | accountable human |
+| `HumanAction` | CHOICE_SET_SINGLE | `signed_agree` / `override` |
+| `OverrideReason` | MULTILINE_TEXT | required when `override` |
+| `DecisionTimestamp` | DATETIME_WITH_TZ | |
+| `FinalDisposition` | CHOICE_SET_SINGLE | `closed` / `escalated` / `sent_to_edd` |
+| `DispositionTimestamp` | DATETIME_WITH_TZ | |
+| `BatchSignoffLink` | RELATIONSHIP → `BatchSignoff` | null unless low-risk batch |
+| `WasPulledForReview` | BOOLEAN | sampled or high-value individual review |
+
+**`BatchSignoff`** — one low-risk batch clearance.
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `BatchReference` | STRING | unique, e.g. `BATCH-2026-03-14` |
+| `SignoffTimestamp` | DATETIME_WITH_TZ | |
+| `SignerName` | STRING | accountable supervisor |
+| `AlertCount` | INTEGER | total in batch |
+| `SampleRatePct` | INTEGER | 5 (demo default) |
+| `SampledCount` | INTEGER | rounded up, ≥1 when non-empty |
+| `HighValueCount` | INTEGER | always-pulled count |
+
+```mermaid
+erDiagram
+    Alert ||--o{ EvidenceItem : has
+    Alert ||--|| AgentAssessment : assessed-by
+    Alert ||--o{ CitationCheck : validated-by
+    Alert ||--o{ RedFlagTrigger : triggers
+    Alert ||--|| DecisionRecord : decided-by
+    EvidenceItem ||--o| CitationCheck : resolves
+    BatchSignoff ||--o{ DecisionRecord : clears
+```
+
+## Shared Contracts
+
+### Evidence-bundle + ID-only citation contract (the heart of "defensible by construction")
+
+1. `EvidenceGather` assigns every gathered item a **stable `EvidenceId`** and returns the
+   bundle to the agent as the agent's input.
+2. The triage and challenger agents may populate `citations[]` **only** with `EvidenceId`s
+   present in the supplied bundle (enforced by the system prompt's output contract).
+3. The deterministic `DecisionGate` validator (a `JsInvoke` step) checks **every** cited id
+   against the bundle: present → `verified`; absent → `unverified_flagged`. The result is one
+   `CitationCheck` row per cited id, surfaced to the human **before** they read the
+   recommendation. An unverifiable citation never passes silently.
+
+### Triage agent I/O (`TriageAgent/agent.json` → `outputSchema`)
+
+Input: `{ alert_reference, customer_name, evidence_bundle: [{ evidence_id, category, summary, payload }] }`
+Output (structured):
+```json
+{
+  "risk_tier": "low | medium | high",
+  "confidence": 78,
+  "recommendation": "escalate | close",
+  "rationale": "Layered outbound payments consistent with normal trade settlement; no screening hits.",
+  "citations": ["ALERT-2026-0142#EV-001", "ALERT-2026-0142#EV-004"]
+}
+```
+
+### Challenger agent I/O (`ChallengerAgent/agent.json` → `outputSchema`)
+
+Input: triage output **plus** the same `evidence_bundle`. Output (structured):
+```json
+{
+  "position": "agreed | disagreed",
+  "disputed_point": "The RM2,000,000 moved through three intermediary accounts in four days is unexplained by the cited evidence.",
+  "reasoning": "...",
+  "citations": ["ALERT-2026-0142#EV-002"]
+}
+```
+
+### Deterministic gate (`DecisionGateApi`) outputs
+
+```json
+{
+  "validated_citations": [{ "evidence_id": "...#EV-001", "outcome": "verified" }],
+  "red_flags": [{ "kind": "structuring", "detail": "3 deposits under RM25,000 in 7 days" }],
+  "final_risk_tier": "high",
+  "tier_was_forced": true,
+  "route": "high_challenger"
+}
+```
+
+Gate rules (deterministic, no LLM):
+- **Red-flag triggers** (any one ⇒ `high`, overriding the agent's tier): sanctions match
+  (customer or counterparty); PEP match; **structuring** = ≥3 transactions each in
+  `[RM22,500, RM25,000)` within any 7-day window; counterparty in a high-risk
+  call-to-action jurisdiction; internal watchlist match.
+- **Confidence floor:** a `low` call may stay `low` only if `confidence ≥ 85`; below 85 →
+  route to a human (medium path). `≥ 85` includes exactly 85.
+- **High-value:** `AggregateAmountMYR ≥ 250000` is always pulled for individual review in the
+  low-risk batch (see the low-risk story).
+
+### Engineered evidence overlay (`data/evidence-overlay.json`) — authoritative schema
+
+The raw dataset has no sanctions/PEP/jurisdiction/watchlist/adverse-media signals, so they
+are injected by this overlay. This is the **single source of truth** for the overlay's shape;
+`EvidenceGather` produces it into the bundle and `DecisionGate`'s detectors consume it — they
+must agree on these exact keys. All entries are **synthetic** (no real persons/entities).
+
+```json
+{
+  "version": "1.0",
+  "overlays": [
+    {
+      "match": { "customer_reference": "CUST-00231" },
+      "sanctions_match":       [ { "entity": "Volkov Holdings", "role": "counterparty", "list": "OFAC SDN (synthetic)" } ],
+      "pep_match":             [ { "entity": "Hassan Farouk", "role": "beneficial_owner", "position": "Deputy Minister (synthetic)" } ],
+      "high_risk_jurisdiction":[ { "counterparty": "Sable Logistics", "jurisdiction": "Northland (synthetic FATF call-to-action)" } ],
+      "watchlist_match":       [ { "entity": "CUST-00231", "list": "Internal watchlist (synthetic)" } ],
+      "adverse_media":         [ { "headline": "...", "url": "synthetic://...", "date": "2024-07-01" } ]
+    }
+  ]
+}
+```
+
+- **Match precedence:** an overlay entry is bound to an alert by `customer_reference`
+  (preferred), else `customer_name`, else `alert_reference`. Exactly one overlay entry per
+  alert; no match ⇒ all screening categories are "no result".
+- **Each of the five arrays is optional/empty** = no signal of that kind.
+- **`EvidenceGather` emits:** one `screening` `EvidenceItem` per `sanctions_match` / `pep_match`
+  / `high_risk_jurisdiction` / `watchlist_match` entry (the entry object becomes `PayloadJson`);
+  an explicit `IsNoResult` `screening` item when none fired; and `adverse_media` `EvidenceItem`s
+  (or an `IsNoResult` adverse-media item).
+- **`DecisionGate` detectors read by key:** `Detect_Sanctions` → `sanctions_match`;
+  `Detect_PEP` → `pep_match`; `Detect_Jurisdiction` → `high_risk_jurisdiction`;
+  `Detect_Watchlist` → `watchlist_match`. (`Detect_Structuring` is computed from the
+  `transaction_history` evidence, **not** the overlay.)
+
+### HITL task baseline (Action Center QuickForm, authored in the `.bpmn`)
+
+All review tasks present read-only context fields (recommendation, tier, confidence, and the
+`CitationCheck` results with any `unverified_flagged` warning) and capture a decision via
+`outcomes[]`. Per-story specifics (sign/override, agree/disagree, batch approve) are in each
+story.
+
+## Shared Error / Outcome Catalogue
+
+These are the **canonical** codes and message strings; per-story tables reference them rather
+than restating the message text.
+
+| Code | Message (user/operator-facing) | Surfaced where |
+| ---- | ------------------------------ | -------------- |
+| `CITATION_UNVERIFIED` | "Cited evidence '\<evidence_id\>' was not found in the gathered case file and cannot be relied on." | `CitationCheck.CheckOutcome = unverified_flagged`; shown to the human before they read the recommendation |
+| `OVERRIDE_REASON_REQUIRED` | "An override reason is required before the override can be recorded." | Medium/high HITL |
+| `TIER_FORCED_HIGH` | "Risk tier forced to HIGH by a red-flag trigger; the agent's proposed tier was overridden." | `DecisionRecord.TierWasForced = true` |
+| `CONFIDENCE_BELOW_FLOOR` | "Low-risk call below the 85% confidence floor; routed to a human." | Gate routing |
+| `BATCH_SIGNOFF_BLOCKED` | "Cannot sign off: \<n\> pulled alert(s) still need review." | Batch summary HITL |
+| `EVIDENCE_NO_RESULT` | "No \<category\> evidence found (explicit no-result, not missing)." | `EvidenceItem.IsNoResult = true` |
+| `WORKFLOW_STEP_FAILED` | "Step '\<name\>' failed: \<detail\>. Instance flagged as an incident for re-run." | API Workflow `TryCatch` → `Response(markJobAsFailed)`; raised as a Maestro incident ([ADR 005](../../adr/005-failure-handling-posture.md)) |
+| `DUPLICATE_WRITE_SKIPPED` | "Record for '\<business_key\>' already exists; insert skipped (idempotent re-run)." | `EvidenceGather` / `AuditWrite` / `BatchPartition` idempotency guard ([ADR 005](../../adr/005-failure-handling-posture.md)) |
+
+## Cross-cutting Threat Model
+
+- **Data classification:** No PII / no real customer data — public synthetic dataset +
+  engineered overlay only (epic Non-Goals). Synthetic sanctions/PEP names are fictional.
+- **Attack surface:** New Action Center task forms (human input), API Workflow inputs, and
+  the agent prompt (LLM). The agent runs behind a deterministic gate, so a manipulated or
+  hallucinated agent output cannot force a *downward* disposition — red flags and the
+  confidence floor only ever escalate.
+- **Prompt injection:** Synthetic evidence text is attacker-controlled in principle; enable
+  the `prompt_injection` and `user_prompt_attacks` built-in guardrails on both agents (run
+  `uip agent guardrails list` first to confirm `Available`). The citation validator is the
+  hard backstop — the LLM cannot introduce evidence that isn't in the bundle.
+- **Authn/authz:** UiPath Automation Cloud identity for all `uip` operations; Action Center
+  tasks assigned to named users/groups. No new public routes. (Demo runs in one tenant/folder.)
+- **Dependency additions:** the Data Fabric Integration Service connector
+  (`uipath-uipath-dataservice`); the public dataset (license attributed). No third-party
+  packages beyond the UiPath platform and a Python stdlib scoring script.
+
+## Global Negative Constraints
+
+- Do **not** let the LLM decide red flags, the confidence floor, or citation validity —
+  those are deterministic (`DecisionGateApi`) by design.
+- Do **not** use real or anonymized-real data anywhere.
+- Do **not** auto-file a regulatory report — the system recommends; a human disposes.
+- Do **not** hand-edit `bindings_v2.json`, `entry-points.json`, `operate.json`, or
+  `package-descriptor.json` — they are CLI-derived (`uip … refresh` / `uip solution resources refresh`).
+- Do **not** `update` or `delete` `DecisionRecord` rows — append-only by convention.
+- Do **not** name Data Fabric fields with reserved words (`Status`, `Type`, `Case`, `User`,
+  `Role`, `Order`, system-field names).
+
+## Build & Deploy Sequence (uip CLI)
+
+Probe the CLI verb once: `uip solution init --help --output json` (if `unknown command`,
+use `uip solution new` and `--folder-path`/`--folder-key`).
+
+1. `uip solution init "AuroraVerdict" --output json`
+2. `uip agent init "AuroraVerdict/TriageAgent" --output json` · same for `ChallengerAgent`
+3. Create the API Workflow projects and `uip solution project add ./AuroraVerdict/<Proj>` for each
+4. Author the `.bpmn`, `agent.json` × 2, and the three `*.json` API Workflows
+5. Define Data Fabric entities: `uip df entities create "<Name>" --body '{...}' --output json` (7 entities above)
+6. Local checks: `uip agent validate`, `uip api-workflow validate <file>`, `uip maestro bpmn validate <bpmn>`
+7. `uip solution resources refresh --output json` (reconcile bindings)
+8. `uip solution pack ./AuroraVerdict ./output -v <ver> --output json`
+9. `uip solution publish ./output/AuroraVerdict.<ver>.zip --output json`
+10. `uip solution deploy run -n "AuroraVerdict" --package-name "AuroraVerdict" --package-version "<ver>" --folder-name "AuroraVerdict" --output json`
+
+Agent evals (golden set) are cloud-based and need `uip solution upload ./AuroraVerdict` first.
+
+## Platform / Runtime Prerequisites
+
+- UiPath Automation Cloud authenticated via `uip` (confirmed); one tenant + one folder for the demo.
+- Tool floors: `@uipath/data-fabric-tool` ≥ 0.9.0 (CRUD/import); `@uipath/api-workflow-executor` for `uip api-workflow run`.
+- Python 3 (stdlib only) for `golden-set/score.py`.
+- Studio Web access for agent eval runs and Maestro debug.
+
+## Resilience & Failure Handling
+
+Posture is **idempotent re-run, no saga/compensation** in demo scope
+([ADR 005](../../adr/005-failure-handling-posture.md)). Applies to every API Workflow and the
+BPMN spine:
+
+- **Idempotency by business key.** Data Fabric has no upsert, so every insert is guarded in a
+  `JsInvoke` step: **query-by-key first, insert only if absent** (`Alert.AlertReference`,
+  `EvidenceItem.EvidenceId`, `BatchSignoff.BatchReference`, one `DecisionRecord` per
+  `AlertLink`). A guarded skip emits `DUPLICATE_WRITE_SKIPPED`. Re-running a step never
+  double-writes.
+- **Bounded failure per workflow.** Each API Workflow wraps its multi-entity write in
+  `TryCatch`; an uncaught error returns a hard-fail `Response` with `markJobAsFailed` and a
+  `WORKFLOW_STEP_FAILED` payload, surfaced as a Maestro **incident**.
+- **Recovery = re-run the instance.** Idempotent writes make a re-run of `EvidenceGather`
+  reconcile a partial write rather than duplicate it. The gate and audit-write run only after
+  a successful gather, so a partial gather never yields a half-formed decision record.
+- **No auto-retry.** Failures raise an incident for manual re-run; diagnose with
+  `uip maestro bpmn instance incidents <id> -f <folder>` and `uip maestro bpmn job traces <jobKey>`.
+- Each story's Functional Requirements already assert step idempotency; this is the shared
+  mechanism behind that.
+
+## Audit Replay (orchestration + record)
+
+"Replayable" is delivered by **two complementary surfaces** — cite both in the demo:
+
+1. **Record-level (durable, business-readable).** The `DecisionRecord` plus its linked
+   `Alert` / `EvidenceItem` / `CitationCheck` / `RedFlagTrigger` / `BatchSignoff` rows
+   reconstruct the full *alert → evidence → recommendation → decision → outcome* trail from
+   Data Fabric. Query via `uip df records query <entity-id> --body '{...}'`. This is the
+   artifact an auditor reads months later.
+2. **Orchestration-level (step-by-step execution evidence).** Every Maestro run produces a
+   full execution trace: which gateway branch was taken, each service/agent/HITL task's
+   inputs and outputs, timestamps, and who acted at each HITL step. Inspect with
+   `uip maestro bpmn instance get <instanceId> -f <folderKey>`,
+   `uip maestro bpmn job traces <jobKey>`, and `uip maestro bpmn instance incidents`. This is
+   the orchestration backbone of the "replayable trail" claim and a core **Track 2 / Maestro
+   platform-usage** talking point.
+
+The Data Fabric record is the durable audit artifact; the Maestro trace is the live
+execution evidence. Neither alone is the whole story.
+
+## Submission & Platform-Usage Deliverables
+
+> Owns the scored **"Built with Claude Code" / Platform Usage bonus** from the discovery
+> brief. These are submission artifacts produced *alongside* the feature build (not a feature
+> story); track them in the build phase and freeze them at the ~Jun 27 feature-freeze.
+
+| Deliverable | Path / form | Purpose |
+| ----------- | ----------- | ------- |
+| **"Built with Claude Code" section** | `AGENTS.md` (repo root) | Lists the actual `uip` commands Claude Code ran (scaffold → author → entities → pack → publish → deploy), linking the build log — the named bonus is for the *coding* agent driving `uip`. |
+| **README** | `README.md` (repo root) | Project summary, the core-5 component map, how to run, and a "Built with Claude Code" subsection. |
+| **Build/command log** | `docs/build-log.md` | Committed chronological log of the `uip` commands executed — the proof, in repo content. |
+| **Deck slide** | (deliverable) | One slide on the Claude-Code build path. |
+| **Video clip** | (deliverable) | ~15–20s of Claude Code driving `uip` — proof, not theatre. |
+
+- **Constraint:** **no `Co-Authored-By` commit trailers** — the evidence lives in repo content
+  and the video, not commit metadata.
+- **Platform-usage breadth:** the core-5 components (Maestro BPMN, Agent Builder ×2, API
+  Workflow, Action Center, Data Fabric) are all load-bearing — see the Component Map. Avoid
+  token integrations.
+- **Optional second layer:** the in-flow triage/challenger agents may run on a Claude model via
+  UiPath — reinforces the story, but the *named* bonus is the coding agent.
