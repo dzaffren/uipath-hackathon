@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora Verdict — Alert Queue</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'IBM Plex Sans', sans-serif; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+    body { background-color: #020617; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .nav-link { transition: background 150ms ease, color 150ms ease; border-left: 2px solid transparent; }
+    .nav-link:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+    .nav-link.active { background: rgba(34,197,94,0.08); border-left-color: #22C55E; color: #f8fafc; }
+    .row-high { border-left: 3px solid #EF4444; }
+    .row-medium { border-left: 3px solid #F59E0B; }
+    .filter-tab { transition: all 150ms ease; cursor: pointer; }
+    .filter-tab.active { background: rgba(255,255,255,0.07); color: #f1f5f9; }
+    .action-btn { transition: all 150ms ease; cursor: pointer; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen">
+
+  <!-- Top Navigation -->
+  <nav class="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-700/60 z-40 flex items-center justify-between px-5">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-sm font-semibold text-slate-100">Aurora Verdict</span>
+        <span class="text-xs text-slate-500">· AML Alert Triage · Bank Negara Malaysia</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block"></span>
+        <span class="text-xs text-slate-500">Live · 2026-03-18 09:42</span>
+      </div>
+      <button class="relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer" aria-label="Notifications">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <span class="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] font-bold flex items-center justify-center text-white">5</span>
+      </button>
+      <div class="flex items-center gap-2 cursor-pointer" role="button">
+        <div class="w-7 h-7 rounded-full bg-sky-500/15 border border-sky-500/40 flex items-center justify-center">
+          <span class="text-xs font-semibold text-sky-300">PS</span>
+        </div>
+        <div class="text-left">
+          <div class="text-xs font-medium text-slate-200">Priya Santos</div>
+          <div class="text-[10px] text-slate-500">AML Investigator</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-14 bottom-0 w-60 bg-slate-900 border-r border-slate-700/60 flex flex-col z-30">
+    <div class="p-3 space-y-0.5 flex-1 overflow-y-auto">
+      <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pt-3 pb-1">Triage</p>
+
+      <a href="index.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-100" aria-current="page">
+        <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+        </svg>
+        My Queue
+        <span class="ml-auto text-[10px] font-semibold bg-slate-700 text-slate-300 rounded-full px-1.5 py-0.5">5</span>
+      </a>
+
+      <a href="case-high.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        High Risk Cases
+        <span class="ml-auto text-[10px] font-semibold bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5">2</span>
+      </a>
+
+      <a href="batch-signoff.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        Batch Sign-off
+        <span class="ml-auto text-[10px] font-semibold bg-slate-700 text-slate-300 rounded-full px-1.5 py-0.5">5</span>
+      </a>
+
+      <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pt-4 pb-1">Records</p>
+
+      <a href="audit-record.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Audit Log
+      </a>
+
+      <a href="#" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400" aria-disabled="true">
+        <svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        Reports
+      </a>
+    </div>
+    <div class="p-4 border-t border-slate-700/60">
+      <div class="text-[11px] text-slate-500 font-medium">Financial Intelligence Unit</div>
+      <div class="text-[10px] text-slate-600 mt-0.5">Bank Negara Malaysia · FIU/AML-OPS</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-60 pt-14 min-h-screen">
+    <div class="p-6 max-w-6xl">
+
+      <!-- Page Header -->
+      <div class="flex items-start justify-between mb-6">
+        <div>
+          <h1 class="text-xl font-semibold text-slate-100">My Alert Queue</h1>
+          <p class="text-sm text-slate-400 mt-0.5">2026-03-18 · 5 alerts awaiting investigator decision</p>
+        </div>
+        <button class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer" aria-label="Refresh queue">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-slate-100">5</div>
+          <div class="text-xs text-slate-400 mt-1">Pending Decision</div>
+        </div>
+        <div class="bg-slate-800 border border-red-500/25 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-red-400">2</div>
+          <div class="text-xs text-slate-400 mt-1">High Risk · Action needed</div>
+        </div>
+        <div class="bg-slate-800 border border-amber-500/25 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-amber-400">3</div>
+          <div class="text-xs text-slate-400 mt-1">Medium Risk</div>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-green-400">8</div>
+          <div class="text-xs text-slate-400 mt-1">Cleared today</div>
+        </div>
+      </div>
+
+      <!-- Alert Table -->
+      <div class="bg-slate-800/40 border border-slate-700 rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-700">
+          <div class="flex items-center gap-1" role="tablist">
+            <button onclick="filterAlerts('all')" id="tab-all" class="filter-tab active px-3 py-1.5 rounded-md text-xs font-medium text-slate-300" role="tab" aria-selected="true">All (5)</button>
+            <button onclick="filterAlerts('HIGH')" id="tab-HIGH" class="filter-tab px-3 py-1.5 rounded-md text-xs font-medium text-slate-500 hover:text-slate-300" role="tab">High Risk (2)</button>
+            <button onclick="filterAlerts('MEDIUM')" id="tab-MEDIUM" class="filter-tab px-3 py-1.5 rounded-md text-xs font-medium text-slate-500 hover:text-slate-300" role="tab">Medium Risk (3)</button>
+          </div>
+          <span class="text-xs text-slate-500">Ordered by risk · High first</span>
+        </div>
+
+        <table class="w-full" role="table">
+          <thead>
+            <tr class="border-b border-slate-700/50">
+              <th class="px-5 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alert ID</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Customer / Account</th>
+              <th class="px-4 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Amount (MYR)</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Risk Tier</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Trigger</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Age</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700/30">
+
+            <!-- HIGH: Northwind Logistics -->
+            <tr class="row-high alert-row" data-tier="HIGH">
+              <td class="px-5 py-4 mono text-xs text-slate-300">AML-2026-0847</td>
+              <td class="px-4 py-4">
+                <div class="text-sm font-medium text-slate-100">Northwind Logistics Inc</div>
+                <div class="text-xs text-slate-500 mt-0.5">ACC-201938 · Corporate Trade Finance</div>
+              </td>
+              <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">2,000,000.00</td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/25 text-xs font-semibold text-red-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>HIGH
+                </span>
+              </td>
+              <td class="px-4 py-4 text-xs text-slate-400">Counterparty in high-risk jurisdiction · Layered transfers</td>
+              <td class="px-4 py-4 text-xs text-red-400 font-semibold mono">4h 12m</td>
+              <td class="px-4 py-4">
+                <a href="case-high.html" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-semibold text-white">
+                  Review
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+              </td>
+            </tr>
+
+            <!-- HIGH: Harbor Point Trading -->
+            <tr class="row-high alert-row" data-tier="HIGH">
+              <td class="px-5 py-4 mono text-xs text-slate-300">AML-2026-0831</td>
+              <td class="px-4 py-4">
+                <div class="text-sm font-medium text-slate-100">Harbor Point Trading</div>
+                <div class="text-xs text-slate-500 mt-0.5">ACC-198744 · Corporate Import/Export</div>
+              </td>
+              <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">1,450,000.00</td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/25 text-xs font-semibold text-red-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>HIGH
+                </span>
+              </td>
+              <td class="px-4 py-4 text-xs text-slate-400">PEP match on account holder · Adverse media</td>
+              <td class="px-4 py-4 text-xs text-red-400 font-semibold mono">2h 37m</td>
+              <td class="px-4 py-4">
+                <a href="case-high.html" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-semibold text-white">
+                  Review
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+              </td>
+            </tr>
+
+            <!-- MEDIUM: Meridian Trading -->
+            <tr class="row-medium alert-row" data-tier="MEDIUM">
+              <td class="px-5 py-4 mono text-xs text-slate-300">AML-2026-0829</td>
+              <td class="px-4 py-4">
+                <div class="text-sm font-medium text-slate-100">Meridian Trading Ltd</div>
+                <div class="text-xs text-slate-500 mt-0.5">ACC-183201 · SME Corporate</div>
+              </td>
+              <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">320,500.00</td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-xs font-semibold text-amber-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>MEDIUM
+                </span>
+              </td>
+              <td class="px-4 py-4 text-xs text-slate-400">Unusual outbound pattern · 12 payments in 30d</td>
+              <td class="px-4 py-4 text-xs text-amber-400 font-semibold mono">6h 04m</td>
+              <td class="px-4 py-4">
+                <a href="case-medium.html" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-xs font-semibold text-white">
+                  Review
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+              </td>
+            </tr>
+
+            <!-- MEDIUM: Northwind (second alert) -->
+            <tr class="row-medium alert-row" data-tier="MEDIUM">
+              <td class="px-5 py-4 mono text-xs text-slate-300">AML-2026-0824</td>
+              <td class="px-4 py-4">
+                <div class="text-sm font-medium text-slate-100">Northwind Logistics Inc</div>
+                <div class="text-xs text-slate-500 mt-0.5">ACC-201938 · Corporate Trade Finance</div>
+              </td>
+              <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">85,000.00</td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-xs font-semibold text-amber-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>MEDIUM
+                </span>
+              </td>
+              <td class="px-4 py-4 text-xs text-slate-400">Transaction volume anomaly · +340% vs 90d avg</td>
+              <td class="px-4 py-4 text-xs text-amber-400 font-semibold mono">12h 19m</td>
+              <td class="px-4 py-4">
+                <a href="case-medium.html" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-xs font-semibold text-white">
+                  Review
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+              </td>
+            </tr>
+
+            <!-- MEDIUM: Cedar Imports -->
+            <tr class="row-medium alert-row" data-tier="MEDIUM">
+              <td class="px-5 py-4 mono text-xs text-slate-300">AML-2026-0819</td>
+              <td class="px-4 py-4">
+                <div class="text-sm font-medium text-slate-100">Cedar Imports Ltd</div>
+                <div class="text-xs text-slate-500 mt-0.5">ACC-175320 · Import/Export</div>
+              </td>
+              <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">48,200.00</td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/25 text-xs font-semibold text-amber-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>MEDIUM
+                </span>
+              </td>
+              <td class="px-4 py-4 text-xs text-slate-400">Adverse media flag · Unverified citation caught</td>
+              <td class="px-4 py-4 text-xs text-amber-400 font-semibold mono">1d 03h</td>
+              <td class="px-4 py-4">
+                <a href="case-medium.html" class="action-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-xs font-semibold text-white">
+                  Review
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Low-Risk Batch Banner -->
+      <div class="mt-4 flex items-center gap-4 p-4 bg-slate-800/50 border border-green-500/20 rounded-xl">
+        <div class="w-9 h-9 rounded-lg bg-green-500/10 border border-green-500/25 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-medium text-slate-200">5 low-risk alerts auto-dispositioned · awaiting supervisor batch sign-off</div>
+          <div class="text-xs text-slate-500 mt-0.5">1 alert (RM89,000) pulled for mandatory full review per sampling policy · 4 cleared for batch</div>
+        </div>
+        <a href="batch-signoff.html" class="action-btn flex-shrink-0 px-4 py-2 bg-green-600 hover:bg-green-700 text-xs font-semibold text-white rounded-lg">
+          Go to Batch Sign-off →
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function filterAlerts(tier) {
+      document.querySelectorAll('.alert-row').forEach(function(row) {
+        row.style.display = (tier === 'all' || row.dataset.tier === tier) ? '' : 'none';
+      });
+      document.querySelectorAll('.filter-tab').forEach(function(tab) {
+        tab.classList.remove('active', 'text-slate-300');
+        tab.classList.add('text-slate-500');
+        tab.setAttribute('aria-selected', 'false');
+      });
+      var active = document.getElementById('tab-' + tier);
+      active.classList.add('active', 'text-slate-300');
+      active.classList.remove('text-slate-500');
+      active.setAttribute('aria-selected', 'true');
+    }
+  </script>
+</body>
+</html>

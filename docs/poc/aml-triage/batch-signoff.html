@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora Verdict — Low-Risk Batch Sign-off · 2026-03-18</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'IBM Plex Sans', sans-serif; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+    body { background-color: #020617; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .nav-link { transition: background 150ms ease, color 150ms ease; border-left: 2px solid transparent; }
+    .nav-link:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+    .nav-link.active { background: rgba(34,197,94,0.08); border-left-color: #22C55E; color: #f8fafc; }
+    .btn-trans { transition: all 150ms ease; cursor: pointer; }
+    tr.signable:hover td { background: rgba(255,255,255,0.02); }
+    #success-state { display: none; }
+    #batch-panel { }
+    .conf-fill { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen">
+
+  <!-- Top Navigation -->
+  <nav class="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-700/60 z-40 flex items-center justify-between px-5">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <a href="index.html" class="text-slate-400 hover:text-slate-200 transition-colors cursor-pointer">Aurora Verdict</a>
+        <svg class="w-3 h-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-slate-200 font-medium">Batch Sign-off · 2026-03-18</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block"></span>
+        <span class="text-xs text-slate-500">Live · 2026-03-18 09:42</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full bg-purple-500/15 border border-purple-500/40 flex items-center justify-center">
+          <span class="text-xs font-semibold text-purple-300">MH</span>
+        </div>
+        <div class="text-left">
+          <div class="text-xs font-medium text-slate-200">Maya Hassan</div>
+          <div class="text-[10px] text-slate-500">AML Supervisor</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-14 bottom-0 w-60 bg-slate-900 border-r border-slate-700/60 flex flex-col z-30">
+    <div class="p-3 space-y-0.5 flex-1 overflow-y-auto">
+      <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pt-3 pb-1">Triage</p>
+      <a href="index.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        My Queue
+        <span class="ml-auto text-[10px] font-semibold bg-slate-700 text-slate-300 rounded-full px-1.5 py-0.5">5</span>
+      </a>
+      <a href="case-high.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        High Risk Cases
+        <span class="ml-auto text-[10px] font-semibold bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5">2</span>
+      </a>
+      <a href="batch-signoff.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-100" aria-current="page">
+        <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Batch Sign-off
+        <span class="ml-auto text-[10px] font-semibold bg-green-500/20 text-green-400 rounded-full px-1.5 py-0.5">5</span>
+      </a>
+      <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pt-4 pb-1">Records</p>
+      <a href="audit-record.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Audit Log
+      </a>
+    </div>
+    <div class="p-4 border-t border-slate-700/60">
+      <div class="text-[11px] text-slate-500 font-medium">Financial Intelligence Unit</div>
+      <div class="text-[10px] text-slate-600 mt-0.5">Bank Negara Malaysia · FIU/AML-OPS</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-60 pt-14 min-h-screen">
+    <div class="p-6 max-w-5xl">
+
+      <!-- Page Header -->
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <h1 class="text-xl font-semibold text-slate-100">Low-Risk Batch Sign-off</h1>
+          <p class="text-sm text-slate-400 mt-0.5">Supervisor sign-off for auto-dispositioned alerts · 2026-03-18</p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-500">Signed in as</div>
+          <div class="text-sm font-medium text-slate-200">Maya Hassan · AML Supervisor</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-4 mb-5">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-slate-100">5</div>
+          <div class="text-xs text-slate-400 mt-1">Auto-dispositioned today</div>
+        </div>
+        <div class="bg-slate-800 border border-green-500/25 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-green-400">4</div>
+          <div class="text-xs text-slate-400 mt-1">Ready for batch sign-off</div>
+        </div>
+        <div class="bg-slate-800 border border-amber-500/25 rounded-xl p-4">
+          <div class="text-2xl font-semibold mono text-amber-400">1</div>
+          <div class="text-xs text-slate-400 mt-1">Pulled for mandatory full review</div>
+        </div>
+      </div>
+
+      <!-- Sampling Policy Note -->
+      <div class="mb-5 flex items-start gap-3 p-4 bg-slate-800 border border-slate-700 rounded-xl">
+        <svg class="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div class="text-xs text-slate-400">
+          <strong class="text-slate-300">Sampling policy active:</strong> All alerts with transaction value ≥RM50,000 are automatically pulled for individual full review regardless of agent confidence. <strong class="text-amber-400">Peak Distribution Bhd (RM89,000)</strong> has been removed from this batch and routed to full review. The 4 remaining alerts are below the high-value threshold and meet the auto-disposition criteria (≥85% confidence, no red flags). You remain accountable for every alert — your signature confirms you have reviewed the agent summary for each.
+        </div>
+      </div>
+
+      <!-- Batch Panel -->
+      <div id="batch-panel">
+        <div class="bg-slate-800/40 border border-slate-700 rounded-xl overflow-hidden mb-5">
+          <div class="px-5 py-3.5 border-b border-slate-700 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">4 Alerts — Ready for batch sign-off</span>
+            <div class="flex items-center gap-2">
+              <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+                <input type="checkbox" id="select-all" checked onchange="toggleAll(this)" class="w-3.5 h-3.5 rounded cursor-pointer">
+                Select all
+              </label>
+            </div>
+          </div>
+
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-slate-700/50">
+                <th class="px-5 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider w-8"></th>
+                <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alert ID</th>
+                <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Customer</th>
+                <th class="px-4 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Amount (MYR)</th>
+                <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Confidence</th>
+                <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Agent close reason</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/30">
+
+              <tr class="signable">
+                <td class="px-5 py-4">
+                  <input type="checkbox" checked class="alert-check w-3.5 h-3.5 rounded cursor-pointer" data-id="AML-2026-0812" onchange="updateCount()">
+                </td>
+                <td class="px-4 py-4 mono text-xs text-slate-300">AML-2026-0812</td>
+                <td class="px-4 py-4">
+                  <div class="text-sm font-medium text-slate-100">Harbour Freight Co</div>
+                  <div class="text-xs text-slate-500">ACC-162044 · Logistics</div>
+                </td>
+                <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">12,000.00</td>
+                <td class="px-4 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 h-1.5 bg-slate-700 rounded-full">
+                      <div class="h-full rounded-full conf-fill" style="width:92%"></div>
+                    </div>
+                    <span class="mono text-xs text-green-400 font-medium">92%</span>
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-xs text-slate-400">Routine domestic cash receipt — consistent with monthly average RM10,000–RM15,000</td>
+              </tr>
+
+              <tr class="signable">
+                <td class="px-5 py-4">
+                  <input type="checkbox" checked class="alert-check w-3.5 h-3.5 rounded cursor-pointer" data-id="AML-2026-0809" onchange="updateCount()">
+                </td>
+                <td class="px-4 py-4 mono text-xs text-slate-300">AML-2026-0809</td>
+                <td class="px-4 py-4">
+                  <div class="text-sm font-medium text-slate-100">Eastline Ventures Sdn Bhd</div>
+                  <div class="text-xs text-slate-500">ACC-155920 · Services</div>
+                </td>
+                <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">8,500.00</td>
+                <td class="px-4 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 h-1.5 bg-slate-700 rounded-full">
+                      <div class="h-full rounded-full conf-fill" style="width:95%"></div>
+                    </div>
+                    <span class="mono text-xs text-green-400 font-medium">95%</span>
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-xs text-slate-400">Recurring supplier payment to Westbridge Auto Parts — 14th consecutive monthly payment, no anomaly</td>
+              </tr>
+
+              <tr class="signable">
+                <td class="px-5 py-4">
+                  <input type="checkbox" checked class="alert-check w-3.5 h-3.5 rounded cursor-pointer" data-id="AML-2026-0801" onchange="updateCount()">
+                </td>
+                <td class="px-4 py-4 mono text-xs text-slate-300">AML-2026-0801</td>
+                <td class="px-4 py-4">
+                  <div class="text-sm font-medium text-slate-100">Skyline Retail Ltd</div>
+                  <div class="text-xs text-slate-500">ACC-149311 · Retail</div>
+                </td>
+                <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">22,000.00</td>
+                <td class="px-4 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 h-1.5 bg-slate-700 rounded-full">
+                      <div class="h-full rounded-full conf-fill" style="width:88%"></div>
+                    </div>
+                    <span class="mono text-xs text-green-400 font-medium">88%</span>
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-xs text-slate-400">Point-of-sale daily aggregation — retail cash deposits; amount consistent with weekend trading volume</td>
+              </tr>
+
+              <tr class="signable">
+                <td class="px-5 py-4">
+                  <input type="checkbox" checked class="alert-check w-3.5 h-3.5 rounded cursor-pointer" data-id="AML-2026-0798" onchange="updateCount()">
+                </td>
+                <td class="px-4 py-4 mono text-xs text-slate-300">AML-2026-0798</td>
+                <td class="px-4 py-4">
+                  <div class="text-sm font-medium text-slate-100">Coastline Corporation Bhd</div>
+                  <div class="text-xs text-slate-500">ACC-139820 · Manufacturing</div>
+                </td>
+                <td class="px-4 py-4 mono text-sm font-medium text-slate-200 text-right">15,000.00</td>
+                <td class="px-4 py-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 h-1.5 bg-slate-700 rounded-full">
+                      <div class="h-full rounded-full conf-fill" style="width:90%"></div>
+                    </div>
+                    <span class="mono text-xs text-green-400 font-medium">90%</span>
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-xs text-slate-400">Payroll disbursement — bi-weekly payment consistent with employee headcount and prior payroll records</td>
+              </tr>
+
+            </tbody>
+          </table>
+
+          <!-- Pulled for review row (non-signable) -->
+          <div class="border-t border-amber-500/20 bg-amber-500/5 px-5 py-4 flex items-center gap-4">
+            <div class="w-3.5 h-3.5 flex-shrink-0"></div>
+            <div class="mono text-xs text-slate-500">AML-2026-0792</div>
+            <div>
+              <div class="text-sm font-medium text-slate-400">Peak Distribution Bhd</div>
+              <div class="text-xs text-slate-600">ACC-128844 · Distribution</div>
+            </div>
+            <div class="mono text-sm font-medium text-slate-400 ml-auto">89,000.00</div>
+            <div class="flex items-center gap-2 ml-4">
+              <div class="w-16 h-1.5 bg-slate-700 rounded-full">
+                <div class="h-full rounded-full conf-fill" style="width:87%"></div>
+              </div>
+              <span class="mono text-xs text-slate-500 font-medium">87%</span>
+            </div>
+            <span class="ml-4 inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-500/15 border border-amber-500/30 text-[10px] font-bold text-amber-400 flex-shrink-0">
+              ⚠ MANDATORY FULL REVIEW
+            </span>
+          </div>
+        </div>
+
+        <!-- Sign-off Action -->
+        <div class="bg-slate-800 border border-green-500/30 rounded-xl p-5">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-sm font-semibold text-slate-200 mb-1">Confirm batch sign-off</div>
+              <div class="text-xs text-slate-400">By signing off, you confirm that you have reviewed the agent summary for each selected alert and accept accountability for these dispositions as supervisor.</div>
+            </div>
+            <div class="text-right ml-6">
+              <div id="sign-count" class="text-2xl font-semibold mono text-green-400">4</div>
+              <div class="text-xs text-slate-500">alerts selected</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 mt-4">
+            <button onclick="signBatch()" class="btn-trans flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-sm font-semibold text-white rounded-lg">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Sign Off <span id="btn-count">4</span> Alerts
+            </button>
+            <a href="index.html" class="btn-trans px-4 py-2.5 border border-slate-600 text-sm text-slate-400 rounded-lg hover:bg-slate-700">
+              Cancel
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success State -->
+      <div id="success-state" class="bg-slate-800 border border-green-500/30 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-700 bg-green-500/5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div>
+            <div id="batch-success-title" class="text-base font-semibold text-green-300">4 alerts signed off</div>
+            <div class="text-xs text-slate-400 mt-0.5">Batch sign-off recorded at 2026-03-18 09:55 · Maya Hassan · AML Supervisor</div>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="space-y-2 mb-5">
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Audit records written for all signed alerts — Maya Hassan named as accountable supervisor
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              AML-2026-0792 (Peak Distribution Bhd) remains in full individual review queue
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Each alert's decision record includes agent confidence, close reason, and your sign-off
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <a href="audit-record.html" class="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-sm font-semibold text-white rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              View Audit Log
+            </a>
+            <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-600 text-sm font-medium text-slate-300 rounded-lg hover:bg-slate-700 transition-colors">
+              ← Return to Queue
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function updateCount() {
+      var checked = document.querySelectorAll('.alert-check:checked').length;
+      document.getElementById('sign-count').textContent = checked;
+      document.getElementById('btn-count').textContent = checked;
+      document.getElementById('select-all').checked = checked === 4;
+      document.getElementById('select-all').indeterminate = (checked > 0 && checked < 4);
+    }
+
+    function toggleAll(cb) {
+      document.querySelectorAll('.alert-check').forEach(function(c) { c.checked = cb.checked; });
+      updateCount();
+    }
+
+    function signBatch() {
+      var count = document.querySelectorAll('.alert-check:checked').length;
+      if (count === 0) { return; }
+      document.getElementById('batch-panel').style.display = 'none';
+      document.getElementById('batch-success-title').textContent = count + ' alert' + (count !== 1 ? 's' : '') + ' signed off';
+      document.getElementById('success-state').style.display = 'block';
+      document.getElementById('success-state').scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  </script>
+</body>
+</html>

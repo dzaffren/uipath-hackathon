@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:uipath-agenthack.devpost.com)",
+      "WebSearch",
+      "WebFetch(domain:developers.plane.so)"
+    ]
+  }
+}

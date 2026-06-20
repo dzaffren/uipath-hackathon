@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora Verdict — Audit Record · AML-2026-0829</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'IBM Plex Sans', sans-serif; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+    body { background-color: #020617; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .nav-link { transition: background 150ms ease, color 150ms ease; border-left: 2px solid transparent; }
+    .nav-link:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+    .nav-link.active { background: rgba(34,197,94,0.08); border-left-color: #22C55E; color: #f8fafc; }
+    .timeline-line { border-left: 2px solid #1e293b; }
+    .btn-trans { transition: all 150ms ease; cursor: pointer; }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen">
+
+  <!-- Top Navigation -->
+  <nav class="fixed top-0 left-0 right-0 h-14 bg-slate-900 border-b border-slate-700/60 z-40 flex items-center justify-between px-5">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <a href="index.html" class="text-slate-400 hover:text-slate-200 transition-colors cursor-pointer">Aurora Verdict</a>
+        <svg class="w-3 h-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-slate-400 cursor-pointer hover:text-slate-200">Audit Log</span>
+        <svg class="w-3 h-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-slate-200 font-medium mono">AML-2026-0829</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="btn-trans flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 hover:bg-slate-700" aria-label="Print record">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print
+      </button>
+      <button class="btn-trans flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 hover:bg-slate-700" aria-label="Export record">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full bg-sky-500/15 border border-sky-500/40 flex items-center justify-center">
+          <span class="text-xs font-semibold text-sky-300">PS</span>
+        </div>
+        <div class="text-left">
+          <div class="text-xs font-medium text-slate-200">Priya Santos</div>
+          <div class="text-[10px] text-slate-500">AML Investigator</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside class="fixed left-0 top-14 bottom-0 w-60 bg-slate-900 border-r border-slate-700/60 flex flex-col z-30">
+    <div class="p-3 space-y-0.5 flex-1 overflow-y-auto">
+      <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pt-3 pb-1">Triage</p>
+      <a href="index.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        My Queue
+        <span class="ml-auto text-[10px] font-semibold bg-slate-700 text-slate-300 rounded-full px-1.5 py-0.5">5</span>
+      </a>
+      <a href="case-high.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        High Risk Cases
+        <span class="ml-auto text-[10px] font-semibold bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5">2</span>
+      </a>
+      <a href="batch-signoff.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400">
+        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Batch Sign-off
+        <span class="ml-auto text-[10px] font-semibold bg-slate-700 text-slate-300 rounded-full px-1.5 py-0.5">5</span>
+      </a>
+      <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-3 pt-4 pb-1">Records</p>
+      <a href="audit-record.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-100" aria-current="page">
+        <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Audit Log
+      </a>
+    </div>
+    <div class="p-4 border-t border-slate-700/60">
+      <div class="text-[11px] text-slate-500 font-medium">Financial Intelligence Unit</div>
+      <div class="text-[10px] text-slate-600 mt-0.5">Bank Negara Malaysia · FIU/AML-OPS</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="ml-60 pt-14 min-h-screen">
+    <div class="p-6 max-w-4xl">
+
+      <!-- Defensible Badge Header -->
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <a href="index.html" class="btn-trans flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Back to queue
+          </a>
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/30">
+          <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          <span class="text-xs font-semibold text-green-300">Defensible by construction</span>
+        </div>
+      </div>
+
+      <!-- Record Header Card -->
+      <div class="bg-slate-800 border border-green-500/25 rounded-xl p-5 mb-5">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <span class="mono text-sm font-semibold text-slate-300">AML-2026-0829</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/15 border border-green-500/30 text-xs font-bold text-green-400">CLOSED</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-xs font-semibold text-amber-400">MEDIUM RISK</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-slate-100">Decision Record — Meridian Trading Ltd</h1>
+            <p class="text-sm text-slate-400 mt-1.5">This record reconstructs the complete trail from alert received, through evidence gathered, recommendation made, human decision taken, to outcome logged. It is audit-ready and immutable.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4 pt-4 border-t border-slate-700">
+          <div>
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Final Disposition</div>
+            <div class="text-lg font-semibold text-green-400 mt-1">CLOSED</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Accountable Investigator</div>
+            <div class="text-sm font-semibold text-slate-200 mt-1">Priya Santos</div>
+            <div class="text-xs text-slate-500">Agreed with recommendation</div>
+          </div>
+          <div>
+            <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Decision Timestamp</div>
+            <div class="text-sm font-semibold text-slate-200 mt-1 mono">2026-03-18 15:44:07</div>
+            <div class="text-xs text-slate-500">MYT (UTC+8)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Field Set -->
+      <div class="grid grid-cols-2 gap-4 mb-5">
+
+        <!-- Alert Reference -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">Alert Reference</div>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Alert ID</span>
+              <span class="mono font-medium text-slate-200">AML-2026-0829</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Date received</span>
+              <span class="mono text-slate-300">2026-03-18 09:14:22</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Trigger type</span>
+              <span class="text-slate-300">Unusual outbound pattern</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Reference -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">Customer / Account</div>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Entity name</span>
+              <span class="font-medium text-slate-200">Meridian Trading Ltd</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Account reference</span>
+              <span class="mono text-slate-300">ACC-183201</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Account type</span>
+              <span class="text-slate-300">SME Corporate</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agent Output -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">Agent Assessment</div>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Risk tier</span>
+              <span class="text-amber-400 font-semibold">MEDIUM</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Agent confidence</span>
+              <span class="mono text-sky-400 font-semibold">78%</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Recommendation</span>
+              <span class="text-green-400 font-semibold">CLOSE</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Model</span>
+              <span class="mono text-slate-400 text-xs">claude-sonnet-4-6</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Red Flags & Challenger -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">Red-flag Triggers & Challenger</div>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Sanctions match</span>
+              <span class="text-green-400">None</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">PEP match</span>
+              <span class="text-green-400">None</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Structuring pattern</span>
+              <span class="text-green-400">Not detected</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Red-flag triggers</span>
+              <span class="text-green-400">None fired</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Challenger review</span>
+              <span class="text-slate-400 italic">N/A (medium risk)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Citation Integrity Table -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl mb-5 overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-slate-700 flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Evidence — Cited Items & Citation Check Status</span>
+          <span class="ml-auto text-[11px] text-green-400 font-medium">3 / 3 citations verified · 0 flagged</span>
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-slate-700/50">
+              <th class="px-5 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Evidence ID</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Description</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Source</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Cited in rec.</th>
+              <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Check status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700/30">
+            <tr>
+              <td class="px-5 py-3.5 mono text-xs text-sky-400">EVD-001</td>
+              <td class="px-4 py-3.5 text-sm text-slate-300">Customer Profile — KYC, risk classification, account history</td>
+              <td class="px-4 py-3.5 text-xs text-slate-400">Core banking system</td>
+              <td class="px-4 py-3.5 text-xs text-green-400">Yes</td>
+              <td class="px-4 py-3.5">
+                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-400">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>VERIFIED
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-5 py-3.5 mono text-xs text-sky-400">EVD-002</td>
+              <td class="px-4 py-3.5 text-sm text-slate-300">Transaction History — 90-day outbound payment record</td>
+              <td class="px-4 py-3.5 text-xs text-slate-400">Transaction monitoring system</td>
+              <td class="px-4 py-3.5 text-xs text-green-400">Yes</td>
+              <td class="px-4 py-3.5">
+                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-400">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>VERIFIED
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-5 py-3.5 mono text-xs text-sky-400">EVD-003</td>
+              <td class="px-4 py-3.5 text-sm text-slate-300">Sanctions / PEP Screening — OFAC, UN, BNM, PEP lists</td>
+              <td class="px-4 py-3.5 text-xs text-slate-400">Screening engine (real-time)</td>
+              <td class="px-4 py-3.5 text-xs text-green-400">Yes</td>
+              <td class="px-4 py-3.5">
+                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-green-400">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>VERIFIED
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-5 py-3.5 mono text-xs text-sky-400">EVD-004</td>
+              <td class="px-4 py-3.5 text-sm text-slate-300">Adverse Media — Commercial database search, no findings</td>
+              <td class="px-4 py-3.5 text-xs text-slate-400">Commercial adverse media DB</td>
+              <td class="px-4 py-3.5 text-xs text-slate-500">No (not relied on)</td>
+              <td class="px-4 py-3.5">
+                <span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                  — Gathered, not cited
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Decision Trail Timeline -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl mb-5 overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-slate-700">
+          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Decision Trail — Complete Reconstruction</span>
+        </div>
+        <div class="p-5 space-y-0">
+
+          <!-- Step 1 -->
+          <div class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center flex-shrink-0 z-10">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              </div>
+              <div class="w-0.5 bg-slate-700 flex-1 mt-1 mb-1" style="min-height:2rem"></div>
+            </div>
+            <div class="pb-6 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-slate-200">Alert received</span>
+                <span class="mono text-xs text-slate-500">2026-03-18 09:14:22</span>
+              </div>
+              <p class="text-xs text-slate-400">Transaction-monitoring alert raised on Meridian Trading Ltd account ACC-183201. Trigger: unusual outbound payment pattern — 12 payments in 30 days, aggregate RM320,500. Alert entered the triage queue.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center flex-shrink-0 z-10">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              </div>
+              <div class="w-0.5 bg-slate-700 flex-1 mt-1 mb-1" style="min-height:2rem"></div>
+            </div>
+            <div class="pb-6 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-slate-200">Evidence assembled</span>
+                <span class="mono text-xs text-slate-500">2026-03-18 09:14:23 – 09:18:41</span>
+              </div>
+              <p class="text-xs text-slate-400">Robot assembled evidence bundle: customer profile (EVD-001), 90-day transaction history (EVD-002), real-time sanctions/PEP screening (EVD-003), adverse media search (EVD-004). All 4 categories gathered. Each item assigned a stable evidence ID for citation grounding.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center flex-shrink-0 z-10">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              </div>
+              <div class="w-0.5 bg-slate-700 flex-1 mt-1 mb-1" style="min-height:2rem"></div>
+            </div>
+            <div class="pb-6 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-slate-200">Recommendation produced</span>
+                <span class="mono text-xs text-slate-500">2026-03-18 15:22:04</span>
+              </div>
+              <p class="text-xs text-slate-400">Agent produced recommendation: CLOSE — risk tier MEDIUM — confidence 78%. Citations: EVD-001, EVD-002, EVD-003. Citation validator confirmed all 3 references map to gathered evidence. Confidence floor check: 78% is above 85% threshold — wait, 78% &lt; 85%. Alert would normally route to human on confidence alone. Presented to investigator with full cited narrative.</p>
+              <div class="mt-2 inline-flex items-center gap-1 text-[11px] text-amber-400">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Confidence 78% — below 85% auto-disposition floor, routed to human investigator as required
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center flex-shrink-0 z-10">
+                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <div class="w-0.5 bg-slate-700 flex-1 mt-1 mb-1" style="min-height:2rem"></div>
+            </div>
+            <div class="pb-6 flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-slate-200">Human decision</span>
+                <span class="mono text-xs text-slate-500">2026-03-18 15:44:07</span>
+              </div>
+              <p class="text-xs text-slate-400">Investigator Priya Santos reviewed the recommendation and all cited evidence. Agreed with the agent recommendation to close. No override reason recorded (agreement does not require one). Decision: <strong class="text-green-400">CLOSE</strong>.</p>
+              <div class="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                <span>Investigator: <strong class="text-slate-300">Priya Santos</strong></span>
+                <span>·</span>
+                <span>Decision: <strong class="text-green-400">Agreed</strong></span>
+                <span>·</span>
+                <span>Override reason: <em>None</em></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5: Final outcome -->
+          <div class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center flex-shrink-0 z-10">
+                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-slate-200">Final disposition &amp; record written</span>
+                <span class="mono text-xs text-slate-500">2026-03-18 15:44:07</span>
+              </div>
+              <p class="text-xs text-slate-400">Alert AML-2026-0829 disposed as <strong class="text-green-400">CLOSED</strong>. This complete decision record written to the Data Fabric audit store. Record is immutable and fully replayable. Accountable human: Priya Santos, 2026-03-18 15:44:07 MYT.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Audit Rubric Scores -->
+      <div class="bg-slate-800 border border-green-500/20 rounded-xl p-5">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Audit-readiness Rubric Check</div>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="flex-1">
+              <span class="text-sm text-slate-200 font-medium">Correct call (vs. dataset ground truth)</span>
+              <span class="text-xs text-green-400 ml-2">PASS</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="flex-1">
+              <span class="text-sm text-slate-200 font-medium">Relevant evidence cited and validated (3/3 verified, 0 hallucinated)</span>
+              <span class="text-xs text-green-400 ml-2">PASS</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-5 h-5 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="flex-1">
+              <span class="text-sm text-slate-200 font-medium">Would this decision survive an audit? Full trail, named accountable human, immutable record</span>
+              <span class="text-xs text-green-400 ml-2">PASS</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-700 flex items-center gap-2">
+          <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span class="text-sm font-semibold text-green-300">3 / 3 rubric points — audit-ready</span>
+          <span class="text-xs text-slate-500 ml-2">Counts toward ≥90% audit-readiness success metric</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>
