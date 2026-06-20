@@ -1,0 +1,85 @@
+{
+  "scenario_id": "GS-08-razlan-watchlist-medium",
+  "demo_beat": "internal watchlist match — medium escalation",
+  "risk_tier": "high",
+  "recommendation": "escalate",
+  "alert_reference": "ALERT-2026-0108",
+  "alert_date": "2026-02-28",
+  "customer_reference": "CUST-00008",
+  "customer_name": "Razlan bin Yusof",
+  "account_reference": "ACC-0008",
+  "aggregate_amount_myr": 42000.00,
+  "notes": "Customer appears on the internal watchlist (synthetic). One deterministic red flag fires: watchlist_match. The agent should call this high and escalate. RM42,000 is a moderate-value transfer. The watchlist hit is the key signal.",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0108#EV-001",
+      "category": "customer_profile",
+      "summary": "Razlan bin Yusof — retail customer, age 45, self-employed. KYC verified 2023-04, standard tier. Account open since 2017. No prior SARs filed. Customer flagged on internal watchlist for prior inquiry (details restricted).",
+      "source_ref": "SAML-D:CUST-00008",
+      "payload": {
+        "customer_reference": "CUST-00008",
+        "customer_name": "Razlan bin Yusof",
+        "account_reference": "ACC-0008",
+        "kyc_tier": "standard",
+        "kyc_verified_date": "2023-04-20",
+        "occupation": "Self-employed",
+        "customer_segment": "retail",
+        "account_open_date": "2017-08-14",
+        "risk_rating": "high",
+        "watchlist_note": "Customer reference CUST-00008 on internal watchlist — prior inquiry flagged (restricted)"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0108#EV-002",
+      "category": "transaction_history",
+      "summary": "Single outbound transfer of RM42,000.00 on 2026-02-28 to Summit Capital Corp. Transaction is above typical monthly activity pattern for this customer.",
+      "source_ref": "SAML-D:TXN-0801",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0801",
+            "date": "2026-02-28",
+            "amount_myr": 42000.00,
+            "type": "TRANSFER",
+            "counterparty_reference": "CP-0008",
+            "counterparty_name": "Summit Capital Corp",
+            "channel": "ONLINE",
+            "narrative": "Investment transfer"
+          }
+        ],
+        "aggregate_amount_myr": 42000.00,
+        "transaction_count": 1
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0108#EV-003",
+      "category": "screening",
+      "summary": "INTERNAL WATCHLIST MATCH: customer reference CUST-00008 appears on the institution's internal watchlist (synthetic). One red-flag trigger fired: watchlist_match. No sanctions or PEP matches.",
+      "source_ref": "overlay:CUST-00008",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [],
+        "pep_match": [],
+        "high_risk_jurisdiction": [],
+        "watchlist_match": [
+          {
+            "entity": "CUST-00008",
+            "list": "Internal watchlist (synthetic)"
+          }
+        ],
+        "screening_status": "RED_FLAG"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0108#EV-004",
+      "category": "adverse_media",
+      "summary": "No adverse media found for Razlan bin Yusof or Summit Capital Corp.",
+      "source_ref": "overlay:CUST-00008",
+      "is_no_result": true,
+      "payload": {
+        "adverse_media": [],
+        "search_terms": ["Razlan bin Yusof", "CUST-00008", "Summit Capital Corp"]
+      }
+    }
+  ]
+}

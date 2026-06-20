@@ -1,0 +1,84 @@
+{
+  "scenario_id": "GS-04-priya-ambiguous-medium",
+  "demo_beat": "ambiguous medium — route to human",
+  "risk_tier": "medium",
+  "recommendation": "escalate",
+  "alert_reference": "ALERT-2026-0104",
+  "alert_date": "2026-02-15",
+  "customer_reference": "CUST-00004",
+  "customer_name": "Priya Nair",
+  "account_reference": "ACC-0004",
+  "aggregate_amount_myr": 15000.00,
+  "notes": "Deliberately ambiguous: RM15,000 transfer to a new counterparty (Apex Trading Ltd, first transaction with this entity), thin customer history (account open <1 year, limited CDD data), no clear red flag but meaningful uncertainty. The agent should NOT call this 'low' with confidence >=85. Expected: medium or high, confidence <85 if calling low. Scored against 'medium' label — do not auto-close.",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0104#EV-001",
+      "category": "customer_profile",
+      "summary": "Priya Nair — retail customer, age 26, self-employed (freelance consultant). KYC verified 2025-08, standard tier. Account open 2025-09 — less than 6 months old. Occupation description is vague ('business consultant'). Limited transaction history available.",
+      "source_ref": "SAML-D:CUST-00004",
+      "payload": {
+        "customer_reference": "CUST-00004",
+        "customer_name": "Priya Nair",
+        "account_reference": "ACC-0004",
+        "kyc_tier": "standard",
+        "kyc_verified_date": "2025-08-22",
+        "occupation": "Business Consultant (freelance)",
+        "customer_segment": "retail",
+        "account_open_date": "2025-09-01",
+        "risk_rating": "medium",
+        "cdd_notes": "Account is <6 months old. Occupation stated as freelance consultant — income source documentation pending enhanced review. No adverse history, but limited baseline established."
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0104#EV-002",
+      "category": "transaction_history",
+      "summary": "Single transfer of RM15,000.00 on 2026-02-15 to Apex Trading Ltd — first transaction with this counterparty. No prior relationship on record. RM15,000 is the largest single outgoing transfer since account opening. No prior outbound transfers >RM5,000.",
+      "source_ref": "SAML-D:TXN-0401",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0401",
+            "date": "2026-02-15",
+            "amount_myr": 15000.00,
+            "type": "TRANSFER",
+            "counterparty_reference": "CP-0004",
+            "counterparty_name": "Apex Trading Ltd",
+            "channel": "ONLINE",
+            "narrative": "Business transfer to new supplier"
+          }
+        ],
+        "aggregate_amount_myr": 15000.00,
+        "transaction_count": 1,
+        "counterparty_history": {
+          "prior_transactions_with_cp": 0,
+          "counterparty_is_new": true
+        }
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0104#EV-003",
+      "category": "screening",
+      "summary": "No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear. No deterministic red flag fires.",
+      "source_ref": "overlay:CUST-00004",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [],
+        "pep_match": [],
+        "high_risk_jurisdiction": [],
+        "watchlist_match": [],
+        "screening_status": "CLEAR"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0104#EV-004",
+      "category": "adverse_media",
+      "summary": "No adverse media found for Priya Nair, account ACC-0004, or Apex Trading Ltd.",
+      "source_ref": "overlay:CUST-00004",
+      "is_no_result": true,
+      "payload": {
+        "adverse_media": [],
+        "search_terms": ["Priya Nair", "CUST-00004", "Apex Trading Ltd"]
+      }
+    }
+  ]
+}

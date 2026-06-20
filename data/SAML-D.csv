@@ -1,0 +1,11 @@
+transaction_id,customer_reference,customer_name,account_reference,transaction_date,amount_myr,transaction_type,counterparty_reference,counterparty_name,counterparty_account,channel,narrative
+TXN-0101,CUST-00001,Mariam Hassan,ACC-0001,2026-01-15,3500.00,DEPOSIT,CP-EMPLOYER-01,Meridian Corp,CPAC-EMPLOYER-01,ONLINE,Monthly salary credit Jan 2026
+TXN-0201,CUST-00002,Daniel Okoro,ACC-0002,2026-02-01,24800.00,CASH_DEPOSIT,CP-CASH-01,Cash Office,CPAC-CASH-01,BRANCH,Cash deposit
+TXN-0202,CUST-00002,Daniel Okoro,ACC-0002,2026-02-03,24200.00,CASH_DEPOSIT,CP-CASH-01,Cash Office,CPAC-CASH-01,BRANCH,Cash deposit
+TXN-0203,CUST-00002,Daniel Okoro,ACC-0002,2026-02-05,24500.00,CASH_DEPOSIT,CP-CASH-01,Cash Office,CPAC-CASH-01,BRANCH,Cash deposit
+TXN-0301,CUST-00003,Ahmad Rashid,ACC-0003,2026-02-10,8200.00,TRANSFER,CP-0003,Bumi Logistics Sdn Bhd,CPAC-0003,ONLINE,Payment for logistics services
+TXN-0401,CUST-00004,Priya Nair,ACC-0004,2026-02-15,15000.00,TRANSFER,CP-0004,Apex Trading Ltd,CPAC-0004,ONLINE,Business transfer to new supplier
+TXN-0501,CUST-00231,Meridian Trading Ltd,ACC-0231,2026-02-20,320000.00,WIRE_TRANSFER,CP-0231,Volkov Holdings,CPAC-0231,ONLINE,Trade settlement wire transfer
+TXN-0601,CUST-00006,Global Ventures Pte Ltd,ACC-0006,2026-02-22,280000.00,WIRE_TRANSFER,CP-0006,Sable Logistics,CPAC-0006,ONLINE,International logistics payment
+TXN-0701,CUST-00007,Lee Siew Ling,ACC-0007,2026-02-25,5800.00,DEPOSIT,CP-EMPLOYER-02,BrightStar Tech Sdn Bhd,CPAC-EMPLOYER-02,ONLINE,Monthly salary credit Feb 2026
+TXN-0801,CUST-00008,Razlan bin Yusof,ACC-0008,2026-02-28,42000.00,TRANSFER,CP-0008,Summit Capital Corp,CPAC-0008,ONLINE,Investment transfer

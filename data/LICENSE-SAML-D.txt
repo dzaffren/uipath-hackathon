@@ -1,0 +1,7 @@
+Dataset: Synthetic AML Dataset (SAML-D)
+Source: berkanoztas/synthetic-transaction-monitoring-dataset-aml (Kaggle)
+License: MIT License (confirmed on Kaggle dataset page)
+Note: This project uses a minimal synthetic reconstruction of SAML-D's schema,
+with amounts normalized to Malaysian Ringgit (MYR), for demonstration purposes.
+No real or anonymized-real customer data is used. All customer names and entity
+names are fictional.

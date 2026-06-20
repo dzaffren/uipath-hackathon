@@ -1,0 +1,102 @@
+{
+  "scenario_id": "GS-05-sanctions-pep-high",
+  "demo_beat": "sanctions + PEP red flag",
+  "risk_tier": "high",
+  "recommendation": "escalate",
+  "alert_reference": "ALERT-2026-0105",
+  "alert_date": "2026-02-20",
+  "customer_reference": "CUST-00231",
+  "customer_name": "Meridian Trading Ltd",
+  "account_reference": "ACC-0231",
+  "aggregate_amount_myr": 320000.00,
+  "notes": "High-value wire (RM320,000) to Volkov Holdings — a sanctioned entity (OFAC SDN synthetic list). The beneficial owner (Hassan Farouk) is also a PEP (Deputy Minister, synthetic). Two deterministic red flags fire: sanctions_match AND pep_match. Agent must cite the screening evidence. Confidence should be high.",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0105#EV-001",
+      "category": "customer_profile",
+      "summary": "Meridian Trading Ltd — corporate customer, incorporated 2019, import/export sector. KYC verified 2024-06, enhanced due diligence tier. Beneficial owner: Hassan Farouk (Director, 60% shareholding). Account open since 2020.",
+      "source_ref": "SAML-D:CUST-00231",
+      "payload": {
+        "customer_reference": "CUST-00231",
+        "customer_name": "Meridian Trading Ltd",
+        "account_reference": "ACC-0231",
+        "kyc_tier": "enhanced",
+        "kyc_verified_date": "2024-06-15",
+        "entity_type": "corporate",
+        "sector": "Import/Export",
+        "customer_segment": "corporate",
+        "account_open_date": "2020-01-10",
+        "risk_rating": "high",
+        "beneficial_owner": {
+          "name": "Hassan Farouk",
+          "shareholding_pct": 60,
+          "role": "Director"
+        }
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0105#EV-002",
+      "category": "transaction_history",
+      "summary": "Single outbound wire transfer of RM320,000.00 on 2026-02-20 to Volkov Holdings (CP-0231). High-value single transaction. No prior transactions with this counterparty on record.",
+      "source_ref": "SAML-D:TXN-0501",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0501",
+            "date": "2026-02-20",
+            "amount_myr": 320000.00,
+            "type": "WIRE_TRANSFER",
+            "counterparty_reference": "CP-0231",
+            "counterparty_name": "Volkov Holdings",
+            "channel": "ONLINE",
+            "narrative": "Trade settlement wire transfer"
+          }
+        ],
+        "aggregate_amount_myr": 320000.00,
+        "transaction_count": 1
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0105#EV-003",
+      "category": "screening",
+      "summary": "SANCTIONS MATCH: counterparty Volkov Holdings appears on OFAC SDN synthetic list. PEP MATCH: beneficial owner Hassan Farouk identified as Deputy Minister (synthetic). Two red-flag triggers fired.",
+      "source_ref": "overlay:CUST-00231",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [
+          {
+            "entity": "Volkov Holdings",
+            "role": "counterparty",
+            "list": "OFAC SDN (synthetic)"
+          }
+        ],
+        "pep_match": [
+          {
+            "entity": "Hassan Farouk",
+            "role": "beneficial_owner",
+            "position": "Deputy Minister (synthetic)"
+          }
+        ],
+        "high_risk_jurisdiction": [],
+        "watchlist_match": [],
+        "screening_status": "RED_FLAG"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0105#EV-004",
+      "category": "adverse_media",
+      "summary": "Adverse media: Volkov Holdings named in synthetic cross-border financial misconduct probe (2024-09-15).",
+      "source_ref": "overlay:CUST-00231",
+      "is_no_result": false,
+      "payload": {
+        "adverse_media": [
+          {
+            "headline": "Volkov Holdings named in cross-border financial misconduct probe (synthetic)",
+            "url": "synthetic://news/volkov-holdings-probe-2024",
+            "date": "2024-09-15"
+          }
+        ]
+      }
+    }
+  ]
+}

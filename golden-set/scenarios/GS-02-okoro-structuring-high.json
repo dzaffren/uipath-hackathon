@@ -1,0 +1,105 @@
+{
+  "scenario_id": "GS-02-okoro-structuring-high",
+  "demo_beat": "structuring / high-risk escalate",
+  "risk_tier": "high",
+  "recommendation": "escalate",
+  "alert_reference": "ALERT-2026-0102",
+  "alert_date": "2026-02-05",
+  "customer_reference": "CUST-00002",
+  "customer_name": "Daniel Okoro",
+  "account_reference": "ACC-0002",
+  "aggregate_amount_myr": 73500.00,
+  "notes": "Three cash deposits of RM24,800, RM24,200, RM24,500 within 5 days — each just under the RM25,000 CTR threshold. Classic structuring pattern. Expected: high risk, escalate. Agent must cite the transaction evidence IDs.",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0102#EV-001",
+      "category": "customer_profile",
+      "summary": "Daniel Okoro — retail customer, age 41, self-employed, KYC verified 2023-11. Account open since 2019. No prior suspicious activity reports.",
+      "source_ref": "SAML-D:CUST-00002",
+      "payload": {
+        "customer_reference": "CUST-00002",
+        "customer_name": "Daniel Okoro",
+        "account_reference": "ACC-0002",
+        "kyc_tier": "standard",
+        "kyc_verified_date": "2023-11-20",
+        "occupation": "Self-employed Trader",
+        "customer_segment": "retail",
+        "account_open_date": "2019-03-14",
+        "risk_rating": "medium"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0102#EV-002",
+      "category": "transaction_history",
+      "summary": "Three cash deposits in 5 days: RM24,800 (2026-02-01), RM24,200 (2026-02-03), RM24,500 (2026-02-05). All from Cash Office branch. Each amount falls in [RM22,500, RM25,000) — the structuring detection window below the RM25,000 CTR threshold. Aggregate: RM73,500.",
+      "source_ref": "SAML-D:TXN-0201,TXN-0202,TXN-0203",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0201",
+            "date": "2026-02-01",
+            "amount_myr": 24800.00,
+            "type": "CASH_DEPOSIT",
+            "counterparty_reference": "CP-CASH-01",
+            "counterparty_name": "Cash Office",
+            "channel": "BRANCH",
+            "narrative": "Cash deposit"
+          },
+          {
+            "transaction_id": "TXN-0202",
+            "date": "2026-02-03",
+            "amount_myr": 24200.00,
+            "type": "CASH_DEPOSIT",
+            "counterparty_reference": "CP-CASH-01",
+            "counterparty_name": "Cash Office",
+            "channel": "BRANCH",
+            "narrative": "Cash deposit"
+          },
+          {
+            "transaction_id": "TXN-0203",
+            "date": "2026-02-05",
+            "amount_myr": 24500.00,
+            "type": "CASH_DEPOSIT",
+            "counterparty_reference": "CP-CASH-01",
+            "counterparty_name": "Cash Office",
+            "channel": "BRANCH",
+            "narrative": "Cash deposit"
+          }
+        ],
+        "aggregate_amount_myr": 73500.00,
+        "transaction_count": 3,
+        "structuring_pattern": {
+          "window_days": 5,
+          "count_in_window": 3,
+          "all_amounts_below_ctr_threshold": true,
+          "ctr_threshold_myr": 25000.00
+        }
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0102#EV-003",
+      "category": "screening",
+      "summary": "No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear. Structuring is behavioural, not screening-based.",
+      "source_ref": "overlay:CUST-00002",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [],
+        "pep_match": [],
+        "high_risk_jurisdiction": [],
+        "watchlist_match": [],
+        "screening_status": "CLEAR"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0102#EV-004",
+      "category": "adverse_media",
+      "summary": "No adverse media found for Daniel Okoro or account ACC-0002.",
+      "source_ref": "overlay:CUST-00002",
+      "is_no_result": true,
+      "payload": {
+        "adverse_media": [],
+        "search_terms": ["Daniel Okoro", "CUST-00002", "ACC-0002"]
+      }
+    }
+  ]
+}

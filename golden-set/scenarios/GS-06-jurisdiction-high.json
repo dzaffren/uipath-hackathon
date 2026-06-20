@@ -1,0 +1,87 @@
+{
+  "scenario_id": "GS-06-jurisdiction-high",
+  "demo_beat": "high-value + high-risk jurisdiction",
+  "risk_tier": "high",
+  "recommendation": "escalate",
+  "alert_reference": "ALERT-2026-0106",
+  "alert_date": "2026-02-22",
+  "customer_reference": "CUST-00006",
+  "customer_name": "Global Ventures Pte Ltd",
+  "account_reference": "ACC-0006",
+  "aggregate_amount_myr": 280000.00,
+  "notes": "High-value wire (RM280,000, above the RM250,000 high-value review bar) to Sable Logistics, whose registered jurisdiction (Northland) is on the synthetic FATF call-to-action list. One deterministic red flag fires: high_risk_jurisdiction. Also qualifies as a high-value transaction for individual pull-out in the low-risk batch (but risk tier drives escalation here).",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0106#EV-001",
+      "category": "customer_profile",
+      "summary": "Global Ventures Pte Ltd — corporate customer, incorporated 2017, trading and distribution sector. KYC verified 2024-09, standard corporate tier. Account open since 2018. No prior adverse history.",
+      "source_ref": "SAML-D:CUST-00006",
+      "payload": {
+        "customer_reference": "CUST-00006",
+        "customer_name": "Global Ventures Pte Ltd",
+        "account_reference": "ACC-0006",
+        "kyc_tier": "standard_corporate",
+        "kyc_verified_date": "2024-09-30",
+        "entity_type": "corporate",
+        "sector": "Trading and Distribution",
+        "customer_segment": "corporate",
+        "account_open_date": "2018-07-01",
+        "risk_rating": "medium"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0106#EV-002",
+      "category": "transaction_history",
+      "summary": "Single outbound wire transfer of RM280,000.00 on 2026-02-22 to Sable Logistics. High-value transaction (>RM250,000 mandatory-review bar). Third transaction with this counterparty in 6 months.",
+      "source_ref": "SAML-D:TXN-0601",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0601",
+            "date": "2026-02-22",
+            "amount_myr": 280000.00,
+            "type": "WIRE_TRANSFER",
+            "counterparty_reference": "CP-0006",
+            "counterparty_name": "Sable Logistics",
+            "channel": "ONLINE",
+            "narrative": "International logistics payment"
+          }
+        ],
+        "aggregate_amount_myr": 280000.00,
+        "transaction_count": 1,
+        "high_value_flag": true,
+        "high_value_threshold_myr": 250000.00
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0106#EV-003",
+      "category": "screening",
+      "summary": "HIGH-RISK JURISDICTION: counterparty Sable Logistics is registered in Northland — a synthetic FATF call-to-action jurisdiction. One red-flag trigger fired: high_risk_jurisdiction.",
+      "source_ref": "overlay:CUST-00006",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [],
+        "pep_match": [],
+        "high_risk_jurisdiction": [
+          {
+            "counterparty": "Sable Logistics",
+            "jurisdiction": "Northland (synthetic FATF call-to-action)"
+          }
+        ],
+        "watchlist_match": [],
+        "screening_status": "RED_FLAG"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0106#EV-004",
+      "category": "adverse_media",
+      "summary": "No adverse media found for Global Ventures Pte Ltd or Sable Logistics beyond the jurisdiction risk.",
+      "source_ref": "overlay:CUST-00006",
+      "is_no_result": true,
+      "payload": {
+        "adverse_media": [],
+        "search_terms": ["Global Ventures Pte Ltd", "CUST-00006", "Sable Logistics"]
+      }
+    }
+  ]
+}

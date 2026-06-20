@@ -1,0 +1,185 @@
+{
+  "fileName": "GoldenSet.json",
+  "id": "d4e5f6a7-b8c9-0123-defa-123456789012",
+  "name": "GoldenSet",
+  "batchSize": 10,
+  "evaluatorRefs": [
+    "c3d4e5f6-a7b8-9012-cdef-012345678901"
+  ],
+  "evaluations": [
+    {
+      "id": "e5f6a7b8-c9d0-1234-efab-234567890123",
+      "name": "GS-01-mariam-clean-low",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0101",
+        "customer_name": "Mariam Hassan",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0101#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Mariam Hassan — retail customer, age 34, employed, KYC verified 2024-03, low-risk segment. Account open since 2021.\",\"payload\":{\"customer_reference\":\"CUST-00001\",\"customer_name\":\"Mariam Hassan\",\"account_reference\":\"ACC-0001\",\"kyc_tier\":\"standard\",\"kyc_verified_date\":\"2024-03-10\",\"occupation\":\"Administrative Executive\",\"customer_segment\":\"retail\",\"account_open_date\":\"2021-06-01\",\"risk_rating\":\"low\"}},{\"evidence_id\":\"ALERT-2026-0101#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single credit of RM3,500.00 on 2026-01-15 from Meridian Corp (CP-EMPLOYER-01). Consistent with regular monthly salary. No unusual volume.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0101\",\"date\":\"2026-01-15\",\"amount_myr\":3500.00,\"type\":\"DEPOSIT\",\"counterparty_reference\":\"CP-EMPLOYER-01\",\"counterparty_name\":\"Meridian Corp\",\"channel\":\"ONLINE\",\"narrative\":\"Monthly salary credit Jan 2026\"}],\"aggregate_amount_myr\":3500.00,\"transaction_count\":1}},{\"evidence_id\":\"ALERT-2026-0101#EV-003\",\"category\":\"screening\",\"summary\":\"No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[],\"watchlist_match\":[],\"screening_status\":\"CLEAR\"}},{\"evidence_id\":\"ALERT-2026-0101#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Mariam Hassan or account ACC-0001.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Mariam Hassan\",\"CUST-00001\",\"ACC-0001\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "low"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "f6a7b8c9-d0e1-2345-fabc-345678901234",
+      "name": "GS-02-okoro-structuring-high",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0102",
+        "customer_name": "Daniel Okoro",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0102#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Daniel Okoro — retail customer, age 41, self-employed, KYC verified 2023-11. Account open since 2019. No prior suspicious activity reports.\",\"payload\":{\"customer_reference\":\"CUST-00002\",\"customer_name\":\"Daniel Okoro\",\"account_reference\":\"ACC-0002\",\"kyc_tier\":\"standard\",\"kyc_verified_date\":\"2023-11-20\",\"occupation\":\"Self-employed Trader\",\"customer_segment\":\"retail\",\"account_open_date\":\"2019-03-14\",\"risk_rating\":\"medium\"}},{\"evidence_id\":\"ALERT-2026-0102#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Three cash deposits in 5 days: RM24,800 (2026-02-01), RM24,200 (2026-02-03), RM24,500 (2026-02-05). All from Cash Office branch. Each amount falls in [RM22,500, RM25,000) — the structuring detection window below the RM25,000 CTR threshold. Aggregate: RM73,500.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0201\",\"date\":\"2026-02-01\",\"amount_myr\":24800.00,\"type\":\"CASH_DEPOSIT\",\"counterparty_reference\":\"CP-CASH-01\",\"counterparty_name\":\"Cash Office\",\"channel\":\"BRANCH\",\"narrative\":\"Cash deposit\"},{\"transaction_id\":\"TXN-0202\",\"date\":\"2026-02-03\",\"amount_myr\":24200.00,\"type\":\"CASH_DEPOSIT\",\"counterparty_reference\":\"CP-CASH-01\",\"counterparty_name\":\"Cash Office\",\"channel\":\"BRANCH\",\"narrative\":\"Cash deposit\"},{\"transaction_id\":\"TXN-0203\",\"date\":\"2026-02-05\",\"amount_myr\":24500.00,\"type\":\"CASH_DEPOSIT\",\"counterparty_reference\":\"CP-CASH-01\",\"counterparty_name\":\"Cash Office\",\"channel\":\"BRANCH\",\"narrative\":\"Cash deposit\"}],\"aggregate_amount_myr\":73500.00,\"transaction_count\":3,\"structuring_pattern\":{\"window_days\":5,\"count_in_window\":3,\"all_amounts_below_ctr_threshold\":true,\"ctr_threshold_myr\":25000.00}}},{\"evidence_id\":\"ALERT-2026-0102#EV-003\",\"category\":\"screening\",\"summary\":\"No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[],\"watchlist_match\":[],\"screening_status\":\"CLEAR\"}},{\"evidence_id\":\"ALERT-2026-0102#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Daniel Okoro or account ACC-0002.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Daniel Okoro\",\"CUST-00002\",\"ACC-0002\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "high"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "a7b8c9d0-e1f2-3456-abcd-456789012345",
+      "name": "GS-03-invented-citation",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0103",
+        "customer_name": "Ahmad Rashid",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0103#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Ahmad Rashid — retail customer, age 29, employed, KYC verified 2025-01. Account open since 2023. No prior alerts.\",\"payload\":{\"customer_reference\":\"CUST-00003\",\"customer_name\":\"Ahmad Rashid\",\"account_reference\":\"ACC-0003\",\"kyc_tier\":\"standard\",\"kyc_verified_date\":\"2025-01-08\",\"occupation\":\"Logistics Coordinator\",\"customer_segment\":\"retail\",\"account_open_date\":\"2023-05-12\",\"risk_rating\":\"low\"}},{\"evidence_id\":\"ALERT-2026-0103#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single transfer of RM8,200.00 on 2026-02-10 to Bumi Logistics Sdn Bhd (established SME). Consistent with described business relationship. No pattern of concern.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0301\",\"date\":\"2026-02-10\",\"amount_myr\":8200.00,\"type\":\"TRANSFER\",\"counterparty_reference\":\"CP-0003\",\"counterparty_name\":\"Bumi Logistics Sdn Bhd\",\"channel\":\"ONLINE\",\"narrative\":\"Payment for logistics services\"}],\"aggregate_amount_myr\":8200.00,\"transaction_count\":1}},{\"evidence_id\":\"ALERT-2026-0103#EV-003\",\"category\":\"screening\",\"summary\":\"No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[],\"watchlist_match\":[],\"screening_status\":\"CLEAR\"}},{\"evidence_id\":\"ALERT-2026-0103#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Ahmad Rashid or Bumi Logistics Sdn Bhd. Explicit no-result — not missing data.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Ahmad Rashid\",\"CUST-00003\",\"Bumi Logistics Sdn Bhd\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "low"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "b8c9d0e1-f2a3-4567-bcde-567890123456",
+      "name": "GS-04-priya-ambiguous-medium",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0104",
+        "customer_name": "Priya Nair",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0104#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Priya Nair — retail customer, age 26, self-employed (freelance consultant). KYC verified 2025-08, standard tier. Account open 2025-09 — less than 6 months old. Occupation description is vague ('business consultant'). Limited transaction history available.\",\"payload\":{\"customer_reference\":\"CUST-00004\",\"customer_name\":\"Priya Nair\",\"account_reference\":\"ACC-0004\",\"kyc_tier\":\"standard\",\"kyc_verified_date\":\"2025-08-22\",\"occupation\":\"Business Consultant (freelance)\",\"customer_segment\":\"retail\",\"account_open_date\":\"2025-09-01\",\"risk_rating\":\"medium\",\"cdd_notes\":\"Account is <6 months old. Occupation stated as freelance consultant — income source documentation pending enhanced review.\"}},{\"evidence_id\":\"ALERT-2026-0104#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single transfer of RM15,000.00 on 2026-02-15 to Apex Trading Ltd — first transaction with this counterparty. No prior relationship on record. RM15,000 is the largest single outgoing transfer since account opening.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0401\",\"date\":\"2026-02-15\",\"amount_myr\":15000.00,\"type\":\"TRANSFER\",\"counterparty_reference\":\"CP-0004\",\"counterparty_name\":\"Apex Trading Ltd\",\"channel\":\"ONLINE\",\"narrative\":\"Business transfer to new supplier\"}],\"aggregate_amount_myr\":15000.00,\"transaction_count\":1,\"counterparty_history\":{\"prior_transactions_with_cp\":0,\"counterparty_is_new\":true}}},{\"evidence_id\":\"ALERT-2026-0104#EV-003\",\"category\":\"screening\",\"summary\":\"No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[],\"watchlist_match\":[],\"screening_status\":\"CLEAR\"}},{\"evidence_id\":\"ALERT-2026-0104#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Priya Nair, account ACC-0004, or Apex Trading Ltd.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Priya Nair\",\"CUST-00004\",\"Apex Trading Ltd\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "medium"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "c9d0e1f2-a3b4-5678-cdef-678901234567",
+      "name": "GS-05-sanctions-pep-high",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0105",
+        "customer_name": "Meridian Trading Ltd",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0105#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Meridian Trading Ltd — corporate customer, incorporated 2019, import/export sector. KYC verified 2024-06, enhanced due diligence tier. Beneficial owner: Hassan Farouk (Director, 60% shareholding). Account open since 2020.\",\"payload\":{\"customer_reference\":\"CUST-00231\",\"customer_name\":\"Meridian Trading Ltd\",\"account_reference\":\"ACC-0231\",\"kyc_tier\":\"enhanced\",\"kyc_verified_date\":\"2024-06-15\",\"entity_type\":\"corporate\",\"sector\":\"Import/Export\",\"customer_segment\":\"corporate\",\"account_open_date\":\"2020-01-10\",\"risk_rating\":\"high\",\"beneficial_owner\":{\"name\":\"Hassan Farouk\",\"shareholding_pct\":60,\"role\":\"Director\"}}},{\"evidence_id\":\"ALERT-2026-0105#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single outbound wire transfer of RM320,000.00 on 2026-02-20 to Volkov Holdings (CP-0231). High-value single transaction. No prior transactions with this counterparty on record.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0501\",\"date\":\"2026-02-20\",\"amount_myr\":320000.00,\"type\":\"WIRE_TRANSFER\",\"counterparty_reference\":\"CP-0231\",\"counterparty_name\":\"Volkov Holdings\",\"channel\":\"ONLINE\",\"narrative\":\"Trade settlement wire transfer\"}],\"aggregate_amount_myr\":320000.00,\"transaction_count\":1}},{\"evidence_id\":\"ALERT-2026-0105#EV-003\",\"category\":\"screening\",\"summary\":\"SANCTIONS MATCH: counterparty Volkov Holdings appears on OFAC SDN synthetic list. PEP MATCH: beneficial owner Hassan Farouk identified as Deputy Minister (synthetic). Two red-flag triggers fired.\",\"payload\":{\"sanctions_match\":[{\"entity\":\"Volkov Holdings\",\"role\":\"counterparty\",\"list\":\"OFAC SDN (synthetic)\"}],\"pep_match\":[{\"entity\":\"Hassan Farouk\",\"role\":\"beneficial_owner\",\"position\":\"Deputy Minister (synthetic)\"}],\"high_risk_jurisdiction\":[],\"watchlist_match\":[],\"screening_status\":\"RED_FLAG\"}},{\"evidence_id\":\"ALERT-2026-0105#EV-004\",\"category\":\"adverse_media\",\"summary\":\"Adverse media: Volkov Holdings named in synthetic cross-border financial misconduct probe (2024-09-15).\",\"payload\":{\"adverse_media\":[{\"headline\":\"Volkov Holdings named in cross-border financial misconduct probe (synthetic)\",\"url\":\"synthetic://news/volkov-holdings-probe-2024\",\"date\":\"2024-09-15\"}]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "high"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "d0e1f2a3-b4c5-6789-defa-789012345678",
+      "name": "GS-06-jurisdiction-high",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0106",
+        "customer_name": "Global Ventures Pte Ltd",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0106#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Global Ventures Pte Ltd — corporate customer, incorporated 2017, trading and distribution sector. KYC verified 2024-09, standard corporate tier. Account open since 2018. No prior adverse history.\",\"payload\":{\"customer_reference\":\"CUST-00006\",\"customer_name\":\"Global Ventures Pte Ltd\",\"account_reference\":\"ACC-0006\",\"kyc_tier\":\"standard_corporate\",\"kyc_verified_date\":\"2024-09-30\",\"entity_type\":\"corporate\",\"sector\":\"Trading and Distribution\",\"customer_segment\":\"corporate\",\"account_open_date\":\"2018-07-01\",\"risk_rating\":\"medium\"}},{\"evidence_id\":\"ALERT-2026-0106#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single outbound wire transfer of RM280,000.00 on 2026-02-22 to Sable Logistics. High-value transaction (>RM250,000 mandatory-review bar).\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0601\",\"date\":\"2026-02-22\",\"amount_myr\":280000.00,\"type\":\"WIRE_TRANSFER\",\"counterparty_reference\":\"CP-0006\",\"counterparty_name\":\"Sable Logistics\",\"channel\":\"ONLINE\",\"narrative\":\"International logistics payment\"}],\"aggregate_amount_myr\":280000.00,\"transaction_count\":1,\"high_value_flag\":true,\"high_value_threshold_myr\":250000.00}},{\"evidence_id\":\"ALERT-2026-0106#EV-003\",\"category\":\"screening\",\"summary\":\"HIGH-RISK JURISDICTION: counterparty Sable Logistics is registered in Northland — a synthetic FATF call-to-action jurisdiction. One red-flag trigger fired: high_risk_jurisdiction.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[{\"counterparty\":\"Sable Logistics\",\"jurisdiction\":\"Northland (synthetic FATF call-to-action)\"}],\"watchlist_match\":[],\"screening_status\":\"RED_FLAG\"}},{\"evidence_id\":\"ALERT-2026-0106#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Global Ventures Pte Ltd or Sable Logistics beyond the jurisdiction risk.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Global Ventures Pte Ltd\",\"CUST-00006\",\"Sable Logistics\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "high"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "e1f2a3b4-c5d6-7890-efab-890123456789",
+      "name": "GS-07-lee-clean-low",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0107",
+        "customer_name": "Lee Siew Ling",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0107#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Lee Siew Ling — retail customer, age 38, employed, KYC verified 2024-05. Account open since 2015. Long-standing customer, stable salary credits on record.\",\"payload\":{\"customer_reference\":\"CUST-00007\",\"customer_name\":\"Lee Siew Ling\",\"account_reference\":\"ACC-0007\",\"kyc_tier\":\"standard\",\"kyc_verified_date\":\"2024-05-14\",\"occupation\":\"Senior Software Engineer\",\"customer_segment\":\"retail\",\"account_open_date\":\"2015-11-20\",\"risk_rating\":\"low\"}},{\"evidence_id\":\"ALERT-2026-0107#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single salary credit of RM5,800.00 on 2026-02-25 from BrightStar Tech Sdn Bhd (CP-EMPLOYER-02). Regular monthly salary — consistent with prior credits from same employer over 3 years.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0701\",\"date\":\"2026-02-25\",\"amount_myr\":5800.00,\"type\":\"DEPOSIT\",\"counterparty_reference\":\"CP-EMPLOYER-02\",\"counterparty_name\":\"BrightStar Tech Sdn Bhd\",\"channel\":\"ONLINE\",\"narrative\":\"Monthly salary credit Feb 2026\"}],\"aggregate_amount_myr\":5800.00,\"transaction_count\":1}},{\"evidence_id\":\"ALERT-2026-0107#EV-003\",\"category\":\"screening\",\"summary\":\"No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[],\"watchlist_match\":[],\"screening_status\":\"CLEAR\"}},{\"evidence_id\":\"ALERT-2026-0107#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Lee Siew Ling or BrightStar Tech Sdn Bhd.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Lee Siew Ling\",\"CUST-00007\",\"BrightStar Tech Sdn Bhd\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "low"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    },
+    {
+      "id": "f2a3b4c5-d6e7-8901-fabc-901234567890",
+      "name": "GS-08-razlan-watchlist-high",
+      "inputs": {
+        "alert_reference": "ALERT-2026-0108",
+        "customer_name": "Razlan bin Yusof",
+        "evidence_bundle": "[{\"evidence_id\":\"ALERT-2026-0108#EV-001\",\"category\":\"customer_profile\",\"summary\":\"Razlan bin Yusof — retail customer, age 45, self-employed. KYC verified 2023-04, standard tier. Account open since 2017. No prior SARs filed. Customer flagged on internal watchlist for prior inquiry (details restricted).\",\"payload\":{\"customer_reference\":\"CUST-00008\",\"customer_name\":\"Razlan bin Yusof\",\"account_reference\":\"ACC-0008\",\"kyc_tier\":\"standard\",\"kyc_verified_date\":\"2023-04-20\",\"occupation\":\"Self-employed\",\"customer_segment\":\"retail\",\"account_open_date\":\"2017-08-14\",\"risk_rating\":\"high\",\"watchlist_note\":\"Customer reference CUST-00008 on internal watchlist — prior inquiry flagged (restricted)\"}},{\"evidence_id\":\"ALERT-2026-0108#EV-002\",\"category\":\"transaction_history\",\"summary\":\"Single outbound transfer of RM42,000.00 on 2026-02-28 to Summit Capital Corp. Transaction is above typical monthly activity pattern for this customer.\",\"payload\":{\"transactions\":[{\"transaction_id\":\"TXN-0801\",\"date\":\"2026-02-28\",\"amount_myr\":42000.00,\"type\":\"TRANSFER\",\"counterparty_reference\":\"CP-0008\",\"counterparty_name\":\"Summit Capital Corp\",\"channel\":\"ONLINE\",\"narrative\":\"Investment transfer\"}],\"aggregate_amount_myr\":42000.00,\"transaction_count\":1}},{\"evidence_id\":\"ALERT-2026-0108#EV-003\",\"category\":\"screening\",\"summary\":\"INTERNAL WATCHLIST MATCH: customer reference CUST-00008 appears on the institution's internal watchlist (synthetic). One red-flag trigger fired: watchlist_match. No sanctions or PEP matches.\",\"payload\":{\"sanctions_match\":[],\"pep_match\":[],\"high_risk_jurisdiction\":[],\"watchlist_match\":[{\"entity\":\"CUST-00008\",\"list\":\"Internal watchlist (synthetic)\"}],\"screening_status\":\"RED_FLAG\"}},{\"evidence_id\":\"ALERT-2026-0108#EV-004\",\"category\":\"adverse_media\",\"summary\":\"No adverse media found for Razlan bin Yusof or Summit Capital Corp.\",\"is_no_result\":true,\"payload\":{\"adverse_media\":[],\"search_terms\":[\"Razlan bin Yusof\",\"CUST-00008\",\"Summit Capital Corp\"]}}]"
+      },
+      "expectedOutput": {
+        "risk_tier": "high"
+      },
+      "expectedAgentBehavior": "",
+      "simulationInstructions": "",
+      "simulateInput": false,
+      "simulateTools": false,
+      "inputGenerationInstructions": "",
+      "evalSetId": "d4e5f6a7-b8c9-0123-defa-123456789012",
+      "source": "manual",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    }
+  ],
+  "modelSettings": [],
+  "agentMemoryEnabled": false,
+  "agentMemorySettings": [],
+  "lineByLineEvaluation": false,
+  "createdAt": "2026-06-20T00:00:00.000Z",
+  "updatedAt": "2026-06-20T00:00:00.000Z"
+}

@@ -1,0 +1,79 @@
+{
+  "scenario_id": "GS-01-mariam-clean-low",
+  "demo_beat": "clean close",
+  "risk_tier": "low",
+  "recommendation": "close",
+  "alert_reference": "ALERT-2026-0101",
+  "alert_date": "2026-01-15",
+  "customer_reference": "CUST-00001",
+  "customer_name": "Mariam Hassan",
+  "account_reference": "ACC-0001",
+  "aggregate_amount_myr": 3500.00,
+  "notes": "Clean salary deposit from established employer. No red flags. Confidence should be high (>=85). Expected: low risk, close.",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0101#EV-001",
+      "category": "customer_profile",
+      "summary": "Mariam Hassan — retail customer, age 34, employed, KYC verified 2024-03, low-risk segment. Account open since 2021.",
+      "source_ref": "SAML-D:CUST-00001",
+      "payload": {
+        "customer_reference": "CUST-00001",
+        "customer_name": "Mariam Hassan",
+        "account_reference": "ACC-0001",
+        "kyc_tier": "standard",
+        "kyc_verified_date": "2024-03-10",
+        "occupation": "Administrative Executive",
+        "customer_segment": "retail",
+        "account_open_date": "2021-06-01",
+        "risk_rating": "low"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0101#EV-002",
+      "category": "transaction_history",
+      "summary": "Single credit of RM3,500.00 on 2026-01-15 from Meridian Corp (CP-EMPLOYER-01). Consistent with regular monthly salary. No unusual volume.",
+      "source_ref": "SAML-D:TXN-0101",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0101",
+            "date": "2026-01-15",
+            "amount_myr": 3500.00,
+            "type": "DEPOSIT",
+            "counterparty_reference": "CP-EMPLOYER-01",
+            "counterparty_name": "Meridian Corp",
+            "channel": "ONLINE",
+            "narrative": "Monthly salary credit Jan 2026"
+          }
+        ],
+        "aggregate_amount_myr": 3500.00,
+        "transaction_count": 1
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0101#EV-003",
+      "category": "screening",
+      "summary": "No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.",
+      "source_ref": "overlay:CUST-00001",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [],
+        "pep_match": [],
+        "high_risk_jurisdiction": [],
+        "watchlist_match": [],
+        "screening_status": "CLEAR"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0101#EV-004",
+      "category": "adverse_media",
+      "summary": "No adverse media found for Mariam Hassan or account ACC-0001.",
+      "source_ref": "overlay:CUST-00001",
+      "is_no_result": true,
+      "payload": {
+        "adverse_media": [],
+        "search_terms": ["Mariam Hassan", "CUST-00001", "ACC-0001"]
+      }
+    }
+  ]
+}
