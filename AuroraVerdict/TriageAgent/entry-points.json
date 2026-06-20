@@ -18,8 +18,9 @@
             "description": "Display name of the customer or entity under review"
           },
           "evidence_bundle": {
-            "type": "string",
-            "description": "JSON array of evidence items, each with fields: evidence_id, category, summary, payload. Pass as a JSON string."
+            "type": "array",
+            "items": { "type": "object" },
+            "description": "Array of evidence items, each with fields: evidence_id, category, summary, payload."
           }
         },
         "required": ["alert_reference", "customer_name", "evidence_bundle"]

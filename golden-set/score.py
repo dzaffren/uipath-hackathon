@@ -73,11 +73,17 @@ def _load_export(path):
     """Load and parse the eval export JSON, aborting loudly on format drift."""
     if not os.path.isfile(path):
         _abort(f"Export file not found: {path}")
-    with open(path, encoding="utf-8") as f:
-        try:
-            raw = json.load(f)
-        except json.JSONDecodeError as exc:
-            _abort(f"Export file is not valid JSON: {exc}")
+    raw_bytes = open(path, "rb").read()
+    if raw_bytes[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        encoding = "utf-16"
+    elif raw_bytes[:3] == b"\xef\xbb\xbf":
+        encoding = "utf-8-sig"
+    else:
+        encoding = "utf-8"
+    try:
+        raw = json.loads(raw_bytes.decode(encoding))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        _abort(f"Export file could not be parsed ({encoding}): {exc}")
 
     # The uip agent eval run results export is a list of case result objects,
     # OR an object with a top-level "items" / "results" / "data" list.

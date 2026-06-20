@@ -1,5 +1,5 @@
 {
-  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "id": "86bb1f4c-5850-49a5-a909-aa9a558853ea",
   "version": "1.1.0",
   "name": "TriageAgent",
   "metadata": {
@@ -66,8 +66,11 @@
         "description": "Display name of the customer or entity under review"
       },
       "evidence_bundle": {
-        "type": "string",
-        "description": "JSON array of evidence items, each with fields: evidence_id (stable citation ID), category (customer_profile|transaction_history|screening|adverse_media), summary, payload. Pass as a JSON string."
+        "type": "array",
+        "items": {
+          "type": "object"
+        },
+        "description": "Array of evidence items, each with fields: evidence_id (stable citation ID), category (customer_profile|transaction_history|screening|adverse_media), summary, payload."
       }
     },
     "required": [
@@ -120,7 +123,7 @@
     "mode": "standard"
   },
   "type": "lowCode",
-  "projectId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "projectId": "86bb1f4c-5850-49a5-a909-aa9a558853ea",
   "resources": [],
   "features": []
 }
