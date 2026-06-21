@@ -1,0 +1,56 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "$id": "entry-points.json",
+  "entryPoints": [
+    {
+      "filePath": "/content/agent.json",
+      "uniqueId": "d4e5f6a7-b8c9-4012-defa-345678901234",
+      "type": "agent",
+      "input": {
+        "type": "object",
+        "properties": {
+          "alert_reference": {
+            "type": "string",
+            "description": "Unique alert identifier, e.g. ALERT-2026-0511"
+          },
+          "customer_name": {
+            "type": "string",
+            "description": "Display name of the customer or entity under review"
+          },
+          "triage_output": {
+            "type": "object",
+            "description": "The triage agent's structured output: risk_tier, confidence, recommendation, rationale, citations[]."
+          },
+          "evidence_bundle": {
+            "type": "array",
+            "items": { "type": "object" },
+            "description": "Array of evidence items, each with fields: evidence_id, category, summary, payload."
+          }
+        },
+        "required": ["alert_reference", "triage_output", "evidence_bundle"]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string",
+            "description": "The challenger's position: 'agreed' or 'disagreed'."
+          },
+          "disputed_point": {
+            "type": "string",
+            "description": "The specific claim disputed (empty when agreed)."
+          },
+          "reasoning": {
+            "type": "string",
+            "description": "The challenger's independent reasoning."
+          },
+          "citations": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Evidence IDs from the bundle supporting the challenger's position."
+          }
+        }
+      }
+    }
+  ]
+}

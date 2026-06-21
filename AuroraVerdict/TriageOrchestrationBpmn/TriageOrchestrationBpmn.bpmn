@@ -20,6 +20,12 @@
         <uipath:inputOutput id="Var_HITLResult" name="hitl_result" type="json" />
         <uipath:inputOutput id="Var_AuditInput" name="audit_input" type="json" />
         <uipath:inputOutput id="Var_AuditResult" name="audit_result" type="json" />
+        <uipath:inputOutput id="Var_ChallengerResult" name="challenger_result" type="json" />
+        <uipath:inputOutput id="Var_ChallengerGateResult" name="challenger_gate_result" type="json" />
+        <uipath:inputOutput id="Var_HighHITLResult" name="high_hitl_result" type="json" />
+        <uipath:inputOutput id="Var_GuardResult" name="guard_result" type="json" />
+        <uipath:inputOutput id="Var_HighAuditInput" name="high_audit_input" type="json" />
+        <uipath:inputOutput id="Var_HighAuditResult" name="high_audit_result" type="json" />
       </uipath:variables>
 
       <uipath:bindings version="v1">
@@ -31,6 +37,8 @@
         <uipath:binding id="Binding_DecisionGate_Folder" name="DecisionGateApi" type="process" elementId="Task_DecisionGate" resource="process" resourceKey="AuroraVerdict.Api.DecisionGateApi" propertyAttribute="FolderPath" />
         <uipath:binding id="Binding_AuditWrite_Name" name="AuditWriteApi" type="process" elementId="Task_AuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="Name" />
         <uipath:binding id="Binding_AuditWrite_Folder" name="AuditWriteApi" type="process" elementId="Task_AuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="FolderPath" />
+        <uipath:binding id="Binding_ChallengerAgent_Name" name="ChallengerAgent" type="process" elementId="Task_ChallengerAgent" resource="process" resourceSubType="Agent" resourceKey="AuroraVerdict.Agent.ChallengerAgent" propertyAttribute="name" />
+        <uipath:binding id="Binding_ChallengerAgent_Folder" name="ChallengerAgent" type="process" elementId="Task_ChallengerAgent" resource="process" resourceSubType="Agent" resourceKey="AuroraVerdict.Agent.ChallengerAgent" propertyAttribute="folderPath" />
       </uipath:bindings>
 
     </bpmn:extensionElements>
@@ -235,17 +243,188 @@ return {
     </bpmn:serviceTask>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- END (normal flow)                                            -->
+    <!-- END (normal medium flow)                                     -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:endEvent id="End_Done" name="Triage complete">
       <bpmn:incoming>Flow_AuditWrite_To_End</bpmn:incoming>
     </bpmn:endEvent>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- END (high_challenger stub — challenger story owns the route) -->
+    <!-- HIGH-RISK BRANCH: ChallengerAgent                           -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <bpmn:endEvent id="End_HighChallenger" name="High-risk route (challenger story)">
+    <bpmn:serviceTask id="Task_ChallengerAgent" name="Run Challenger Agent">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.StartAgentJob" version="v1" />
+          <uipath:context>
+            <uipath:input name="name" type="string" value="=bindings.Binding_ChallengerAgent_Name" />
+            <uipath:input name="folderPath" type="string" value="=bindings.Binding_ChallengerAgent_Folder" />
+          </uipath:context>
+          <uipath:input name="JobArguments" type="json" target="bodyField"><![CDATA[{"alert_reference":"=vars.Var_AlertReference","customer_name":"=vars.Var_EvidenceResult.customer_name","triage_output":"=vars.Var_AgentResult","evidence_bundle":"=vars.Var_EvidenceResult.evidence_bundle"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_ChallengerResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_Router_To_HighChallenger</bpmn:incoming>
+      <bpmn:outgoing>Flow_Challenger_To_ChallengerGate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- HIGH-RISK BRANCH: DecisionGate re-validate challenger citations -->
+    <bpmn:serviceTask id="Task_ChallengerGate" name="Re-validate Challenger Citations">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_DecisionGate_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_DecisionGate_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_id":"=vars.Var_EvidenceResult.alert_id","evidence_bundle":"=vars.Var_EvidenceResult.evidence_bundle","agent_output":"=vars.Var_ChallengerResult"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_ChallengerGateResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Challenger_To_ChallengerGate</bpmn:incoming>
+      <bpmn:outgoing>Flow_ChallengerGate_To_HighHITL</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- HIGH-RISK BRANCH: Senior/EDD sign-off HITL -->
+    <bpmn:userTask id="Task_HighHITL" name="Senior/EDD Review">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Actions.HITL" version="v1" />
+          <uipath:input name="HitlTaskArguments" type="json" target="bodyField"><![CDATA[{
+  "title": "Senior/EDD Review — High-Risk Alert",
+  "fields": [
+    {"id": "origRecommendation", "label": "Original recommendation (call)", "type": "text", "direction": "input", "value": "=vars.Var_AgentResult.recommendation"},
+    {"id": "origRiskTier", "label": "Risk tier", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.final_risk_tier"},
+    {"id": "origConfidence", "label": "Agent confidence (%)", "type": "number", "direction": "input", "value": "=vars.Var_AgentResult.confidence"},
+    {"id": "origCitedEvidence", "label": "Cited evidence (recommendation)", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.validated_citations"},
+    {"id": "challengerPosition", "label": "Challenger position (agreed / disagreed)", "type": "text", "direction": "input", "value": "=vars.Var_ChallengerResult.position"},
+    {"id": "challengerDispute", "label": "Disputed point + reasoning (if disagreed)", "type": "text", "direction": "input", "value": "=vars.Var_ChallengerResult.disputed_point"},
+    {"id": "challengerCitations", "label": "Challenger validated citations", "type": "text", "direction": "input", "value": "=vars.Var_ChallengerGateResult.validated_citations"},
+    {"id": "unverifiedWarning", "label": "Unverified challenger citations — do not rely on flagged items", "type": "text", "direction": "input", "value": "=vars.Var_ChallengerGateResult.has_unverified"},
+    {"id": "reviewerReason", "label": "Reason (required if your call differs from the recommendation or the challenger)", "type": "text", "direction": "output"}
+  ],
+  "outcomes": [
+    {"id": "escalate", "name": "Escalate", "isPrimary": true, "action": "Continue"},
+    {"id": "close", "name": "Close", "action": "Continue"},
+    {"id": "send_to_edd", "name": "Send to EDD", "action": "Continue"}
+  ]
+}]]></uipath:input>
+          <uipath:output name="Process response" type="Actions.HITL" var="Var_HighHITLResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ChallengerGate_To_HighHITL</bpmn:incoming>
+      <bpmn:outgoing>Flow_HighHITL_To_Guard</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- HIGH-RISK BRANCH: Override reason guard -->
+    <bpmn:scriptTask id="Task_OverrideReasonGuard" name="Validate Reviewer Reason" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "agentResult": "=vars.Var_AgentResult",
+  "challengerResult": "=vars.Var_ChallengerResult",
+  "highHitlResult": "=vars.Var_HighHITLResult"
+}]]></uipath:input>
+          <uipath:output name="guard_result" type="json" var="Var_GuardResult" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_HighHITL_To_Guard</bpmn:incoming>
+      <bpmn:outgoing>Flow_Guard_To_BuildHighAudit</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var finalCall = (highHitlResult && highHitlResult.outcomeId) ? highHitlResult.outcomeId : '';
+var origRecommendation = (agentResult && agentResult.recommendation) ? agentResult.recommendation.toLowerCase() : '';
+var challengerPosition = (challengerResult && challengerResult.position) ? challengerResult.position.toLowerCase() : 'agreed';
+var reviewerReason = (highHitlResult && highHitlResult.fields && highHitlResult.fields.reviewerReason) ? highHitlResult.fields.reviewerReason : '';
+var differsFromRec = (finalCall !== origRecommendation);
+var differsFromChallenger = (challengerPosition === 'agreed') ? differsFromRec : !differsFromRec;
+var requiresReason = differsFromRec || differsFromChallenger;
+if (requiresReason && (!reviewerReason || reviewerReason.trim() === '')) {
+  throw new Error('OVERRIDE_REASON_REQUIRED: A reason is required because your final call differs from the recommendation or the challenger.');
+}
+return { requires_reason: requiresReason, reviewer_reason: reviewerReason };
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- HIGH-RISK BRANCH: Build high-risk audit payload -->
+    <bpmn:scriptTask id="Task_BuildHighAudit" name="Build High-Risk Audit Payload" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "evidenceResult": "=vars.Var_EvidenceResult",
+  "agentResult": "=vars.Var_AgentResult",
+  "gateResult": "=vars.Var_GateResult",
+  "challengerResult": "=vars.Var_ChallengerResult",
+  "highHitlResult": "=vars.Var_HighHITLResult"
+}]]></uipath:input>
+          <uipath:output name="high_audit_input" type="json" var="Var_HighAuditInput" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Guard_To_BuildHighAudit</bpmn:incoming>
+      <bpmn:outgoing>Flow_BuildHighAudit_To_HighAuditWrite</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var alertId = (evidenceResult && evidenceResult.alert_id) ? evidenceResult.alert_id : '';
+var finalRiskTier = (gateResult && gateResult.final_risk_tier) ? gateResult.final_risk_tier : 'high';
+var originalTier = (gateResult && gateResult.original_proposed_tier) ? gateResult.original_proposed_tier : ((agentResult && agentResult.risk_tier) ? agentResult.risk_tier : 'high');
+var tierWasForced = (gateResult && gateResult.tier_was_forced) ? gateResult.tier_was_forced : false;
+var redFlags = (gateResult && Array.isArray(gateResult.red_flags)) ? gateResult.red_flags : [];
+var finalCall = (highHitlResult && highHitlResult.outcomeId) ? highHitlResult.outcomeId : 'escalate';
+var origRecommendation = (agentResult && agentResult.recommendation) ? agentResult.recommendation : '';
+var differsFromRec = (finalCall !== origRecommendation);
+var humanAction = differsFromRec ? 'override' : 'signed_agree';
+var reviewerReason = (highHitlResult && highHitlResult.fields && highHitlResult.fields.reviewerReason) ? highHitlResult.fields.reviewerReason : '';
+var decisionMakerName = (highHitlResult && highHitlResult.completedBy) ? highHitlResult.completedBy : 'Senior Reviewer';
+var challengerOutcome = (challengerResult && challengerResult.position) ? challengerResult.position : 'agreed';
+var challengerDispute = '';
+if (challengerResult && challengerResult.position === 'disagreed') {
+  var dp = challengerResult.disputed_point || '';
+  var rs = challengerResult.reasoning || '';
+  challengerDispute = dp + (rs ? '\n' + rs : '');
+}
+var DISPOSITION_MAP = { 'escalate': 'escalated', 'close': 'closed', 'send_to_edd': 'sent_to_edd' };
+var finalDisposition = DISPOSITION_MAP[finalCall] || 'escalated';
+var now = new Date().toISOString();
+return {
+  alert_id: alertId,
+  final_risk_tier: finalRiskTier,
+  original_proposed_tier: originalTier,
+  route_taken: 'high_challenger',
+  tier_was_forced: tierWasForced,
+  red_flags: redFlags,
+  challenger_outcome: challengerOutcome,
+  challenger_dispute: challengerDispute,
+  reviewer_reason: reviewerReason,
+  decision_maker_name: decisionMakerName,
+  human_action: humanAction,
+  override_reason: reviewerReason,
+  decision_timestamp: now,
+  final_disposition: finalDisposition,
+  disposition_timestamp: now
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- HIGH-RISK BRANCH: AuditWrite -->
+    <bpmn:serviceTask id="Task_HighAuditWrite" name="Write High-Risk Decision Record">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_AuditWrite_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_AuditWrite_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_id":"=vars.Var_HighAuditInput.alert_id","final_risk_tier":"=vars.Var_HighAuditInput.final_risk_tier","original_proposed_tier":"=vars.Var_HighAuditInput.original_proposed_tier","route_taken":"=vars.Var_HighAuditInput.route_taken","tier_was_forced":"=vars.Var_HighAuditInput.tier_was_forced","red_flags":"=vars.Var_HighAuditInput.red_flags","challenger_outcome":"=vars.Var_HighAuditInput.challenger_outcome","challenger_dispute":"=vars.Var_HighAuditInput.challenger_dispute","reviewer_reason":"=vars.Var_HighAuditInput.reviewer_reason","decision_maker_name":"=vars.Var_HighAuditInput.decision_maker_name","human_action":"=vars.Var_HighAuditInput.human_action","override_reason":"=vars.Var_HighAuditInput.override_reason","decision_timestamp":"=vars.Var_HighAuditInput.decision_timestamp","final_disposition":"=vars.Var_HighAuditInput.final_disposition","disposition_timestamp":"=vars.Var_HighAuditInput.disposition_timestamp"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_HighAuditResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BuildHighAudit_To_HighAuditWrite</bpmn:incoming>
+      <bpmn:outgoing>Flow_HighAuditWrite_To_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- HIGH-RISK BRANCH: End -->
+    <bpmn:endEvent id="End_HighDone" name="High-risk triage complete">
+      <bpmn:incoming>Flow_HighAuditWrite_To_End</bpmn:incoming>
     </bpmn:endEvent>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -266,7 +445,7 @@ return {
     <bpmn:sequenceFlow id="Flow_Router_To_HITL" sourceRef="Gateway_Route" targetRef="Task_HITL">
       <bpmn:conditionExpression>=vars.Var_Route == "medium_signoff"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Router_To_HighChallenger" sourceRef="Gateway_Route" targetRef="End_HighChallenger">
+    <bpmn:sequenceFlow id="Flow_Router_To_HighChallenger" sourceRef="Gateway_Route" targetRef="Task_ChallengerAgent">
       <bpmn:conditionExpression>=vars.Var_Route == "high_challenger"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Router_To_LowBatch" sourceRef="Gateway_Route" targetRef="End_LowBatch">
@@ -275,6 +454,12 @@ return {
     <bpmn:sequenceFlow id="Flow_HITL_To_BuildAudit" sourceRef="Task_HITL" targetRef="Task_BuildAudit" />
     <bpmn:sequenceFlow id="Flow_BuildAudit_To_AuditWrite" sourceRef="Task_BuildAudit" targetRef="Task_AuditWrite" />
     <bpmn:sequenceFlow id="Flow_AuditWrite_To_End" sourceRef="Task_AuditWrite" targetRef="End_Done" />
+    <bpmn:sequenceFlow id="Flow_Challenger_To_ChallengerGate" sourceRef="Task_ChallengerAgent" targetRef="Task_ChallengerGate" />
+    <bpmn:sequenceFlow id="Flow_ChallengerGate_To_HighHITL" sourceRef="Task_ChallengerGate" targetRef="Task_HighHITL" />
+    <bpmn:sequenceFlow id="Flow_HighHITL_To_Guard" sourceRef="Task_HighHITL" targetRef="Task_OverrideReasonGuard" />
+    <bpmn:sequenceFlow id="Flow_Guard_To_BuildHighAudit" sourceRef="Task_OverrideReasonGuard" targetRef="Task_BuildHighAudit" />
+    <bpmn:sequenceFlow id="Flow_BuildHighAudit_To_HighAuditWrite" sourceRef="Task_BuildHighAudit" targetRef="Task_HighAuditWrite" />
+    <bpmn:sequenceFlow id="Flow_HighAuditWrite_To_End" sourceRef="Task_HighAuditWrite" targetRef="End_HighDone" />
 
   </bpmn:process>
 
@@ -284,6 +469,7 @@ return {
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_TriageOrchestration">
 
+      <!-- Main flow shapes -->
       <bpmndi:BPMNShape id="S_Start_Triage" bpmnElement="Start_Triage">
         <dc:Bounds x="80" y="142" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -333,13 +519,7 @@ return {
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="S_End_HighChallenger" bpmnElement="End_HighChallenger">
-        <dc:Bounds x="897" y="280" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="860" y="323" width="110" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-
+      <!-- Low batch end -->
       <bpmndi:BPMNShape id="S_End_LowBatch" bpmnElement="End_LowBatch">
         <dc:Bounds x="1010" y="280" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -347,6 +527,39 @@ return {
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
+      <!-- High-risk branch shapes -->
+      <bpmndi:BPMNShape id="S_Task_ChallengerAgent" bpmnElement="Task_ChallengerAgent">
+        <dc:Bounds x="860" y="420" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_ChallengerGate" bpmnElement="Task_ChallengerGate">
+        <dc:Bounds x="1040" y="420" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_HighHITL" bpmnElement="Task_HighHITL">
+        <dc:Bounds x="1220" y="420" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_OverrideReasonGuard" bpmnElement="Task_OverrideReasonGuard">
+        <dc:Bounds x="1400" y="420" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_BuildHighAudit" bpmnElement="Task_BuildHighAudit">
+        <dc:Bounds x="1580" y="420" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_HighAuditWrite" bpmnElement="Task_HighAuditWrite">
+        <dc:Bounds x="1760" y="420" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_End_HighDone" bpmnElement="End_HighDone">
+        <dc:Bounds x="1942" y="442" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1918" y="485" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Main flow edges -->
       <bpmndi:BPMNEdge id="E_Flow_Start_To_Evidence" bpmnElement="Flow_Start_To_Evidence">
         <di:waypoint x="116" y="160" />
         <di:waypoint x="170" y="160" />
@@ -377,11 +590,6 @@ return {
         <di:waypoint x="1010" y="160" />
       </bpmndi:BPMNEdge>
 
-      <bpmndi:BPMNEdge id="E_Flow_Router_To_HighChallenger" bpmnElement="Flow_Router_To_HighChallenger">
-        <di:waypoint x="920" y="185" />
-        <di:waypoint x="920" y="280" />
-      </bpmndi:BPMNEdge>
-
       <bpmndi:BPMNEdge id="E_Flow_Router_To_LowBatch" bpmnElement="Flow_Router_To_LowBatch">
         <di:waypoint x="945" y="160" />
         <di:waypoint x="1028" y="160" />
@@ -401,6 +609,43 @@ return {
       <bpmndi:BPMNEdge id="E_Flow_AuditWrite_To_End" bpmnElement="Flow_AuditWrite_To_End">
         <di:waypoint x="1490" y="160" />
         <di:waypoint x="1552" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <!-- High-risk branch edges -->
+      <bpmndi:BPMNEdge id="E_Flow_Router_To_HighChallenger" bpmnElement="Flow_Router_To_HighChallenger">
+        <di:waypoint x="920" y="185" />
+        <di:waypoint x="920" y="460" />
+        <di:waypoint x="860" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Challenger_To_ChallengerGate" bpmnElement="Flow_Challenger_To_ChallengerGate">
+        <di:waypoint x="980" y="460" />
+        <di:waypoint x="1040" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ChallengerGate_To_HighHITL" bpmnElement="Flow_ChallengerGate_To_HighHITL">
+        <di:waypoint x="1160" y="460" />
+        <di:waypoint x="1220" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_HighHITL_To_Guard" bpmnElement="Flow_HighHITL_To_Guard">
+        <di:waypoint x="1340" y="460" />
+        <di:waypoint x="1400" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Guard_To_BuildHighAudit" bpmnElement="Flow_Guard_To_BuildHighAudit">
+        <di:waypoint x="1520" y="460" />
+        <di:waypoint x="1580" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_BuildHighAudit_To_HighAuditWrite" bpmnElement="Flow_BuildHighAudit_To_HighAuditWrite">
+        <di:waypoint x="1700" y="460" />
+        <di:waypoint x="1760" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_HighAuditWrite_To_End" bpmnElement="Flow_HighAuditWrite_To_End">
+        <di:waypoint x="1880" y="460" />
+        <di:waypoint x="1942" y="460" />
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

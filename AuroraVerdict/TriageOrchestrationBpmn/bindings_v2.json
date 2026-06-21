@@ -116,6 +116,38 @@
       },
       "resource": "process",
       "propertyAttribute": "FolderPath"
+    },
+    {
+      "id": "Binding_ChallengerAgent_Name",
+      "kind": "process",
+      "name": "ChallengerAgent",
+      "resourceKey": "AuroraVerdict.Agent.ChallengerAgent",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "ChallengerAgent",
+        "SolutionsSupport": "Required",
+        "SubType": "Agent",
+        "PropertyAttribute": "name"
+      },
+      "resource": "process",
+      "resourceSubType": "Agent",
+      "propertyAttribute": "name"
+    },
+    {
+      "id": "Binding_ChallengerAgent_Folder",
+      "kind": "process",
+      "name": "ChallengerAgent",
+      "resourceKey": "AuroraVerdict.Agent.ChallengerAgent",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "ChallengerAgent",
+        "SolutionsSupport": "Required",
+        "SubType": "Agent",
+        "PropertyAttribute": "folderPath"
+      },
+      "resource": "process",
+      "resourceSubType": "Agent",
+      "propertyAttribute": "folderPath"
     }
   ]
 }

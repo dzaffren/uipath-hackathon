@@ -85,6 +85,24 @@
           "solutionsSupport": "Required"
         },
         "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
       }
     ],
     "folders": [

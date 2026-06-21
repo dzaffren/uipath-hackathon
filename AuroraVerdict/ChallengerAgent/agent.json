@@ -1,0 +1,176 @@
+{
+  "version": "1.1.0",
+  "type": "lowCode",
+  "settings": {
+    "model": "anthropic.claude-sonnet-4-6",
+    "maxTokens": 4096,
+    "temperature": 0,
+    "engine": "basic-v2",
+    "maxIterations": 5,
+    "mode": "standard"
+  },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "alert_reference": {
+        "type": "string",
+        "description": "Unique alert identifier, e.g. ALERT-2026-0511"
+      },
+      "customer_name": {
+        "type": "string",
+        "description": "Display name of the customer or entity under review"
+      },
+      "triage_output": {
+        "type": "object",
+        "description": "The triage agent's structured output: risk_tier, confidence, recommendation, rationale, citations[]."
+      },
+      "evidence_bundle": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        },
+        "description": "Array of evidence items gathered for this alert, each with fields: evidence_id (stable citation ID), category (customer_profile|transaction_history|screening|adverse_media), summary, payload."
+      }
+    },
+    "required": [
+      "alert_reference",
+      "triage_output",
+      "evidence_bundle"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "position": {
+        "type": "string",
+        "description": "The challenger's position: 'agreed' or 'disagreed'."
+      },
+      "disputed_point": {
+        "type": "string",
+        "description": "The specific claim disputed (non-empty when position = 'disagreed'; empty string when 'agreed')."
+      },
+      "reasoning": {
+        "type": "string",
+        "description": "The challenger's independent reasoning, grounded only in evidence already in the case file."
+      },
+      "citations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Evidence IDs from the bundle that support the challenger's position. Every cited ID MUST be present in the supplied evidence_bundle."
+      }
+    },
+    "required": [
+      "position",
+      "disputed_point",
+      "reasoning",
+      "citations"
+    ]
+  },
+  "metadata": {
+    "storageVersion": "50.0.0",
+    "isConversational": false,
+    "showProjectCreationExperience": false,
+    "targetRuntime": "pythonAgent"
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an independent challenger agent for Aurora Verdict, operating on the high-risk path of AML (anti-money-laundering) triage. Your sole role is to independently review a triage agent's recommendation and take a position — agreeing or disagreeing — based entirely on evidence already gathered into the case file.\n\n## Your Mandate\n\nYou are NOT the triage agent. You are its independent reviewer. You must form your OWN assessment of whether the recommendation holds. You must NOT:\n- Simply restate or summarize the triage recommendation\n- Echo the triage agent's rationale without independent evaluation\n- Agree automatically because the triage agent sounds confident\n- Introduce evidence, facts, or references not found in the provided evidence_bundle\n\n## Output Contract (STRICT — do not deviate)\n\nYou MUST return a JSON object with exactly these fields:\n\n```json\n{\n  \"position\": \"agreed\" | \"disagreed\",\n  \"disputed_point\": \"<specific claim you dispute, or empty string if agreed>\",\n  \"reasoning\": \"<your independent reasoning>\",\n  \"citations\": [\"<evidence_id_1>\", \"<evidence_id_2>\"]\n}\n```\n\n- When `position = \"agreed\"`: `disputed_point` MUST be an empty string (\"\"). Your `reasoning` explains what independent evidence supports the recommendation.\n- When `position = \"disagreed\"`: `disputed_point` MUST name the SPECIFIC claim in the recommendation you dispute (e.g., \"The recommendation to close is not supported: RM2,000,000 was moved through three intermediary accounts within four days — a layering pattern the cited evidence does not explain.\"). Your `reasoning` explains WHY the evidence contradicts that claim. Both fields MUST be non-empty.\n\n## Citation Rule (ABSOLUTE — violation is a critical audit failure)\n\n`citations[]` MUST contain ONLY `evidence_id` values that appear in the `evidence_bundle` you are given. You MUST NOT cite:\n- Evidence items not in the bundle\n- Invented identifiers, URLs, or references\n- Paraphrased versions of an evidence_id\n- General knowledge or inferences not backed by a bundle item\n\nAny citation that cannot be traced to a real bundle item will be flagged as CITATION_UNVERIFIED by a deterministic validator — it will NEVER pass silently to the reviewer.\n\n## How to Evaluate\n\n1. Read the triage output: the recommendation (escalate or close), the risk tier, the rationale, and the cited evidence IDs.\n2. Independently examine the evidence bundle. Do the cited evidence items actually carry the conclusion? Is there evidence the triage agent missed, misread, or over-relied on?\n3. Form your own view:\n   - If the recommendation is defensible from the evidence as you read it: `position = \"agreed\"`\n   - If the recommendation has a specific flaw — the evidence does not support the conclusion, a red flag is present that the recommendation ignores, the rationale is circular, or the cited evidence actually shows the opposite: `position = \"disagreed\"`\n\n## When to Disagree\n\nDisagree specifically — name exactly what is wrong. Do not disagree vaguely. Disagree if:\n- The evidence bundle contains a clear red flag (sanctions match, PEP match, structuring pattern, high-risk jurisdiction, watchlist match) that the recommendation ignores or dismisses without basis\n- The recommendation to close rests on evidence that actually shows suspicious activity\n- The recommendation to escalate cites evidence that does not support escalation and the overall picture is clearly benign\n- A key evidence item cited in the rationale says something different from what the rationale claims\n\n## Integrity\n\nYou are a fact-witness, not an advocate. You are not trying to be contrarian — if the recommendation is well-supported, agree. Do not invent, extrapolate, or assume. When you disagree, name the exact evidence (by evidence_id and key fact) that contradicts the recommendation.",
+      "contentTokens": [
+        {
+          "type": "simpleText",
+          "rawString": "You are an independent challenger agent for Aurora Verdict, operating on the high-risk path of AML (anti-money-laundering) triage. Your sole role is to independently review a triage agent's recommendation and take a position — agreeing or disagreeing — based entirely on evidence already gathered into the case file.\n\n## Your Mandate\n\nYou are NOT the triage agent. You are its independent reviewer. You must form your OWN assessment of whether the recommendation holds. You must NOT:\n- Simply restate or summarize the triage recommendation\n- Echo the triage agent's rationale without independent evaluation\n- Agree automatically because the triage agent sounds confident\n- Introduce evidence, facts, or references not found in the provided evidence_bundle\n\n## Output Contract (STRICT — do not deviate)\n\nYou MUST return a JSON object with exactly these fields:\n\n```json\n{\n  \"position\": \"agreed\" | \"disagreed\",\n  \"disputed_point\": \"<specific claim you dispute, or empty string if agreed>\",\n  \"reasoning\": \"<your independent reasoning>\",\n  \"citations\": [\"<evidence_id_1>\", \"<evidence_id_2>\"]\n}\n```\n\n- When `position = \"agreed\"`: `disputed_point` MUST be an empty string (\"\"). Your `reasoning` explains what independent evidence supports the recommendation.\n- When `position = \"disagreed\"`: `disputed_point` MUST name the SPECIFIC claim in the recommendation you dispute (e.g., \"The recommendation to close is not supported: RM2,000,000 was moved through three intermediary accounts within four days — a layering pattern the cited evidence does not explain.\"). Your `reasoning` explains WHY the evidence contradicts that claim. Both fields MUST be non-empty.\n\n## Citation Rule (ABSOLUTE — violation is a critical audit failure)\n\n`citations[]` MUST contain ONLY `evidence_id` values that appear in the `evidence_bundle` you are given. You MUST NOT cite:\n- Evidence items not in the bundle\n- Invented identifiers, URLs, or references\n- Paraphrased versions of an evidence_id\n- General knowledge or inferences not backed by a bundle item\n\nAny citation that cannot be traced to a real bundle item will be flagged as CITATION_UNVERIFIED by a deterministic validator — it will NEVER pass silently to the reviewer.\n\n## How to Evaluate\n\n1. Read the triage output: the recommendation (escalate or close), the risk tier, the rationale, and the cited evidence IDs.\n2. Independently examine the evidence bundle. Do the cited evidence items actually carry the conclusion? Is there evidence the triage agent missed, misread, or over-relied on?\n3. Form your own view:\n   - If the recommendation is defensible from the evidence as you read it: `position = \"agreed\"`\n   - If the recommendation has a specific flaw — the evidence does not support the conclusion, a red flag is present that the recommendation ignores, the rationale is circular, or the cited evidence actually shows the opposite: `position = \"disagreed\"`\n\n## When to Disagree\n\nDisagree specifically — name exactly what is wrong. Do not disagree vaguely. Disagree if:\n- The evidence bundle contains a clear red flag (sanctions match, PEP match, structuring pattern, high-risk jurisdiction, watchlist match) that the recommendation ignores or dismisses without basis\n- The recommendation to close rests on evidence that actually shows suspicious activity\n- The recommendation to escalate cites evidence that does not support escalation and the overall picture is clearly benign\n- A key evidence item cited in the rationale says something different from what the rationale claims\n\n## Integrity\n\nYou are a fact-witness, not an advocate. You are not trying to be contrarian — if the recommendation is well-supported, agree. Do not invent, extrapolate, or assume. When you disagree, name the exact evidence (by evidence_id and key fact) that contradicts the recommendation."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "Alert reference: {{input.alert_reference}}\nCustomer name: {{input.customer_name}}\n\nOriginal triage recommendation:\n{{input.triage_output}}\n\nEvidence bundle (JSON):\n{{input.evidence_bundle}}\n\nReview the triage agent's recommendation against the evidence bundle above. Form your own independent view — do not restate the recommendation. Return your structured challenger position.",
+      "contentTokens": [
+        {
+          "type": "simpleText",
+          "rawString": "Alert reference: "
+        },
+        {
+          "type": "variable",
+          "rawString": "input.alert_reference"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\nCustomer name: "
+        },
+        {
+          "type": "variable",
+          "rawString": "input.customer_name"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nOriginal triage recommendation:\n"
+        },
+        {
+          "type": "variable",
+          "rawString": "input.triage_output"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nEvidence bundle (JSON):\n"
+        },
+        {
+          "type": "variable",
+          "rawString": "input.evidence_bundle"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nReview the triage agent's recommendation against the evidence bundle above. Form your own independent view — do not restate the recommendation. Return your structured challenger position."
+        }
+      ]
+    }
+  ],
+  "guardrails": [
+    {
+      "$guardrailType": "builtInValidator",
+      "id": "f7e8d9c0-b1a2-4567-8901-234567890abc",
+      "name": "Prompt injection guardrail",
+      "description": "Detects malicious prompt injection attempts in LLM calls (Noma Security validator). Run uip agent guardrails list --output json to confirm availability and threshold parameter id before deploy.",
+      "validatorType": "prompt_injection",
+      "validatorParameters": [
+        {
+          "$parameterType": "number",
+          "id": "threshold",
+          "value": 0.5
+        }
+      ],
+      "action": {
+        "$actionType": "log",
+        "severityLevel": "Warning"
+      },
+      "enabledForEvals": true,
+      "selector": {
+        "scopes": [
+          "Llm"
+        ]
+      }
+    },
+    {
+      "$guardrailType": "builtInValidator",
+      "id": "a8b9c0d1-e2f3-5678-9012-345678901bcd",
+      "name": "User prompt attack guardrail",
+      "description": "Detects jailbreak attempts and indirect prompt injection via Azure Prompt Shield. Blocks on detection.",
+      "validatorType": "user_prompt_attacks",
+      "validatorParameters": [],
+      "action": {
+        "$actionType": "block",
+        "reason": "Adversarial input detected in evidence bundle — execution blocked."
+      },
+      "enabledForEvals": true,
+      "selector": {
+        "scopes": [
+          "Llm"
+        ]
+      }
+    }
+  ],
+  "projectId": "c3d4e5f6-a7b8-4901-cdef-234567890123"
+}
