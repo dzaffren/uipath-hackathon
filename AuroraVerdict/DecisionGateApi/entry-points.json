@@ -18,10 +18,13 @@
       "output": {
         "type": "object",
         "properties": {
-          "validated_citations": { "type": "array"   },
-          "has_unverified":      { "type": "boolean" },
-          "final_risk_tier":     { "type": "string"  },
-          "route":               { "type": "string"  }
+          "validated_citations":    { "type": "array"   },
+          "has_unverified":         { "type": "boolean" },
+          "red_flags":              { "type": "array"   },
+          "final_risk_tier":        { "type": "string"  },
+          "tier_was_forced":        { "type": "boolean" },
+          "original_proposed_tier": { "type": "string"  },
+          "route":                  { "type": "string"  }
         }
       },
       "displayName": "Run"

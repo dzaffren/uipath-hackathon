@@ -11,9 +11,14 @@
           "document": {
             "type": "object",
             "properties": {
-              "validated_citations": { "type": "array",   "default": [] },
-              "has_unverified":      { "type": "boolean", "default": false },
-              "assessment_id":       { "type": "string",  "default": "" }
+              "validated_citations":    { "type": "array",   "default": [] },
+              "has_unverified":         { "type": "boolean", "default": false },
+              "assessment_id":          { "type": "string",  "default": "" },
+              "red_flags":              { "type": "array",   "default": [] },
+              "final_risk_tier":        { "type": "string",  "default": "" },
+              "tier_was_forced":        { "type": "boolean", "default": false },
+              "original_proposed_tier": { "type": "string",  "default": "" },
+              "route":                  { "type": "string",  "default": "medium_signoff" }
             },
             "title": "Variables"
           }
@@ -42,10 +47,13 @@
       "document": {
         "type": "object",
         "properties": {
-          "validated_citations": { "type": "array"   },
-          "has_unverified":      { "type": "boolean" },
-          "final_risk_tier":     { "type": "string"  },
-          "route":               { "type": "string"  }
+          "validated_citations":    { "type": "array"   },
+          "has_unverified":         { "type": "boolean" },
+          "red_flags":              { "type": "array"   },
+          "final_risk_tier":        { "type": "string"  },
+          "tier_was_forced":        { "type": "boolean" },
+          "original_proposed_tier": { "type": "string"  },
+          "route":                  { "type": "string"  }
         },
         "title": "Outputs"
       }
@@ -67,7 +75,7 @@
             "Javascript_ValidateAndCheck": {
               "run": {
                 "script": {
-                  "code": "const alertId = $workflow.input.alert_id;\nconst evidenceBundle = $workflow.input.evidence_bundle;\nconst agentOutput = $workflow.input.agent_output;\nif (!alertId) throw new Error('VALIDATION_ERROR: alert_id is required');\nif (!Array.isArray(evidenceBundle)) throw new Error('VALIDATION_ERROR: evidence_bundle must be an array');\nif (!agentOutput || !Array.isArray(agentOutput.citations)) throw new Error('VALIDATION_ERROR: agent_output.citations must be an array');\nconst bundleIds = new Set(evidenceBundle.map(function(e) { return e.evidence_id; }));\nconst RISK_TIER_MAP = { 'low': 0, 'medium': 1, 'high': 2 };\nconst RECOMMENDATION_MAP = { 'escalate': 0, 'close': 1 };\nconst validatedCitations = agentOutput.citations.map(function(cid) {\n  const isVerified = bundleIds.has(cid);\n  return { evidence_id: cid, outcome: isVerified ? 'verified' : 'unverified_flagged', check_outcome_number_id: isVerified ? 0 : 1 };\n});\nconst hasUnverified = validatedCitations.some(function(c) { return c.outcome === 'unverified_flagged'; });\nconst riskTierLower = (agentOutput.risk_tier || 'medium').toLowerCase();\nconst recommendationLower = (agentOutput.recommendation || 'close').toLowerCase();\nconst proposedRiskTierNumberId = RISK_TIER_MAP[riskTierLower] !== undefined ? RISK_TIER_MAP[riskTierLower] : 1;\nconst recommendationNumberId = RECOMMENDATION_MAP[recommendationLower] !== undefined ? RECOMMENDATION_MAP[recommendationLower] : 0;\nreturn { validated_citations: validatedCitations, has_unverified: hasUnverified, proposed_risk_tier_number_id: proposedRiskTierNumberId, recommendation_number_id: recommendationNumberId, confidence: agentOutput.confidence || 0, rationale: agentOutput.rationale || '', cited_evidence_ids_json: JSON.stringify(agentOutput.citations), final_risk_tier: agentOutput.risk_tier || 'medium', route: 'medium_signoff' };",
+                  "code": "const alertId = $workflow.input.alert_id;\nconst evidenceBundle = $workflow.input.evidence_bundle;\nconst agentOutput = $workflow.input.agent_output;\nif (!alertId) throw new Error('VALIDATION_ERROR: alert_id is required');\nif (!Array.isArray(evidenceBundle)) throw new Error('VALIDATION_ERROR: evidence_bundle must be an array');\nif (!agentOutput || !Array.isArray(agentOutput.citations)) throw new Error('VALIDATION_ERROR: agent_output.citations must be an array');\nconst bundleIds = new Set(evidenceBundle.map(function(e) { return e.evidence_id; }));\nconst RISK_TIER_MAP = { 'low': 0, 'medium': 1, 'high': 2 };\nconst RECOMMENDATION_MAP = { 'escalate': 0, 'close': 1 };\nconst validatedCitations = agentOutput.citations.map(function(cid) {\n  const isVerified = bundleIds.has(cid);\n  return { evidence_id: cid, outcome: isVerified ? 'verified' : 'unverified_flagged', check_outcome_number_id: isVerified ? 0 : 1 };\n});\nconst hasUnverified = validatedCitations.some(function(c) { return c.outcome === 'unverified_flagged'; });\nconst riskTierLower = (agentOutput.risk_tier || 'medium').toLowerCase();\nconst recommendationLower = (agentOutput.recommendation || 'close').toLowerCase();\nconst proposedRiskTierNumberId = RISK_TIER_MAP[riskTierLower] !== undefined ? RISK_TIER_MAP[riskTierLower] : 1;\nconst recommendationNumberId = RECOMMENDATION_MAP[recommendationLower] !== undefined ? RECOMMENDATION_MAP[recommendationLower] : 0;\nreturn { validated_citations: validatedCitations, has_unverified: hasUnverified, proposed_risk_tier_number_id: proposedRiskTierNumberId, recommendation_number_id: recommendationNumberId, confidence: agentOutput.confidence || 0, rationale: agentOutput.rationale || '', cited_evidence_ids_json: JSON.stringify(agentOutput.citations) };",
                   "language": "javascript",
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
@@ -219,8 +227,99 @@
             }
           },
           {
+            "Javascript_Detect_Sanctions": {
+              "run": {
+                "script": {
+                  "code": "const bundle = $workflow.input.evidence_bundle;\nconst results = [];\nfor (let i = 0; i < bundle.length; i++) {\n  const item = bundle[i];\n  if (item.category === 'screening') {\n    let payload;\n    try { payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload; } catch(e) { continue; }\n    if (payload && payload.sanctions_match) {\n      const match = payload.sanctions_match;\n      const entity = match.entity || 'unknown';\n      const role = match.role || 'counterparty';\n      results.push({ kind: 'sanctions', detail: 'Sanctions-list match on ' + role + ' ' + entity });\n    }\n  }\n}\nreturn results;",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Sanctions\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Detect sanctions match", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Javascript_Detect_Pep": {
+              "run": {
+                "script": {
+                  "code": "const bundle = $workflow.input.evidence_bundle;\nconst results = [];\nfor (let i = 0; i < bundle.length; i++) {\n  const item = bundle[i];\n  if (item.category === 'screening') {\n    let payload;\n    try { payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload; } catch(e) { continue; }\n    if (payload && payload.pep_match) {\n      const match = payload.pep_match;\n      const name = match.name || match.entity || 'unknown';\n      results.push({ kind: 'pep', detail: 'Politically-exposed-person match on ' + name });\n    }\n  }\n}\nreturn results;",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Pep\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Detect PEP match", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Javascript_Detect_Structuring": {
+              "run": {
+                "script": {
+                  "code": "const bundle = $workflow.input.evidence_bundle;\nconst results = [];\nconst txItems = [];\nfor (let i = 0; i < bundle.length; i++) {\n  const item = bundle[i];\n  if (item.category === 'transaction_history') {\n    let payload;\n    try { payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload; } catch(e) { continue; }\n    if (payload && Array.isArray(payload.transactions)) {\n      for (let t = 0; t < payload.transactions.length; t++) { txItems.push(payload.transactions[t]); }\n    }\n  }\n}\nconst inBand = [];\nfor (let i = 0; i < txItems.length; i++) {\n  const tx = txItems[i];\n  const amt = parseFloat(tx.amount_myr || tx.amount || 0);\n  if (amt >= 22500 && amt < 25000) {\n    const d = new Date(tx.date).getTime();\n    if (!isNaN(d)) { inBand.push({ date: d, dateStr: tx.date }); }\n  }\n}\ninBand.sort(function(a, b) { return a.date - b.date; });\nconst WINDOW_MS = 7 * 24 * 60 * 60 * 1000;\nlet firedEntry = null;\nfor (let i = 0; i < inBand.length && !firedEntry; i++) {\n  let j = i;\n  while (j < inBand.length && inBand[j].date - inBand[i].date <= WINDOW_MS) { j++; }\n  if (j - i >= 3) { firedEntry = { count: j - i, startDate: inBand[i].dateStr, endDate: inBand[j - 1].dateStr }; }\n}\nif (firedEntry) {\n  results.push({ kind: 'structuring', detail: firedEntry.count + ' transactions in [RM22,500, RM25,000) within a 7-day rolling window (' + firedEntry.startDate + '..' + firedEntry.endDate + ')' });\n}\nreturn results;",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Structuring\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Detect structuring pattern", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Javascript_Detect_Jurisdiction": {
+              "run": {
+                "script": {
+                  "code": "const bundle = $workflow.input.evidence_bundle;\nconst results = [];\nfor (let i = 0; i < bundle.length; i++) {\n  const item = bundle[i];\n  if (item.category === 'screening') {\n    let payload;\n    try { payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload; } catch(e) { continue; }\n    if (payload && payload.high_risk_jurisdiction) {\n      const match = payload.high_risk_jurisdiction;\n      const entity = match.entity || match.name || 'unknown';\n      results.push({ kind: 'jurisdiction', detail: 'Counterparty ' + entity + ' registered in a high-risk call-to-action jurisdiction' });\n    }\n  }\n}\nreturn results;",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Jurisdiction\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Detect high-risk jurisdiction", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Javascript_Detect_Watchlist": {
+              "run": {
+                "script": {
+                  "code": "const bundle = $workflow.input.evidence_bundle;\nconst results = [];\nfor (let i = 0; i < bundle.length; i++) {\n  const item = bundle[i];\n  if (item.category === 'screening') {\n    let payload;\n    try { payload = typeof item.payload === 'string' ? JSON.parse(item.payload) : item.payload; } catch(e) { continue; }\n    if (payload && payload.watchlist_match) {\n      const match = payload.watchlist_match;\n      const entity = match.entity || match.name || 'unknown';\n      results.push({ kind: 'watchlist', detail: 'Internal watchlist match on ' + entity });\n    }\n  }\n}\nreturn results;",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Watchlist\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Detect internal watchlist match", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Javascript_Compute_Route": {
+              "run": {
+                "script": {
+                  "code": "const sanctions = $context.outputs.Javascript_Detect_Sanctions || [];\nconst pep = $context.outputs.Javascript_Detect_Pep || [];\nconst structuring = $context.outputs.Javascript_Detect_Structuring || [];\nconst jurisdiction = $context.outputs.Javascript_Detect_Jurisdiction || [];\nconst watchlist = $context.outputs.Javascript_Detect_Watchlist || [];\nconst redFlags = [].concat(sanctions, pep, structuring, jurisdiction, watchlist);\nconst agentOutput = $workflow.input.agent_output;\nconst originalProposedTier = (agentOutput.risk_tier || 'medium').toLowerCase();\nconst confidenceRaw = typeof agentOutput.confidence === 'number' ? agentOutput.confidence : parseFloat(agentOutput.confidence) || 0;\nconst confidence = (confidenceRaw > 0 && confidenceRaw <= 1) ? confidenceRaw * 100 : confidenceRaw;\nlet finalRiskTier, tierWasForced, route;\nif (redFlags.length > 0) {\n  finalRiskTier = 'high';\n  tierWasForced = true;\n  route = 'high_challenger';\n} else if (originalProposedTier === 'low') {\n  finalRiskTier = 'low';\n  tierWasForced = false;\n  route = confidence >= 85 ? 'low_batch' : 'medium_signoff';\n} else {\n  finalRiskTier = originalProposedTier;\n  tierWasForced = false;\n  route = 'medium_signoff';\n}\nreturn { red_flags: redFlags, final_risk_tier: finalRiskTier, tier_was_forced: tierWasForced, original_proposed_tier: originalProposedTier, route: route };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Compute_Route\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Compute route and override fields", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Assign_RouteVars": {
+              "set": {
+                "red_flags":              "${$context.outputs.Javascript_Compute_Route.red_flags}",
+                "final_risk_tier":        "${$context.outputs.Javascript_Compute_Route.final_risk_tier}",
+                "tier_was_forced":        "${$context.outputs.Javascript_Compute_Route.tier_was_forced}",
+                "original_proposed_tier": "${$context.outputs.Javascript_Compute_Route.original_proposed_tier}",
+                "route":                  "${$context.outputs.Javascript_Compute_Route.route}"
+              },
+              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
+              "metadata": { "activityType": "Assign", "displayName": "Store routing variables", "fullName": "Assign", "isTransparent": false }
+            }
+          },
+          {
             "Response_2": {
-              "response": "${{ validated_citations: $context.variables.validated_citations, has_unverified: $context.variables.has_unverified, final_risk_tier: $context.outputs.Javascript_ValidateAndCheck.final_risk_tier, route: $context.outputs.Javascript_ValidateAndCheck.route }}",
+              "response": "${{ validated_citations: $context.variables.validated_citations, has_unverified: $context.variables.has_unverified, red_flags: $context.variables.red_flags, final_risk_tier: $context.variables.final_risk_tier, tier_was_forced: $context.variables.tier_was_forced, original_proposed_tier: $context.variables.original_proposed_tier, route: $context.variables.route }}",
               "markJobAsFailed": false,
               "then": "end",
               "metadata": { "activityType": "Response", "displayName": "Return gate result", "fullName": "Response" }
