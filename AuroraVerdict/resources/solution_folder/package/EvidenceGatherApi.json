@@ -1,10 +1,10 @@
 {
   "docVersion": "1.0.0",
   "resource": {
-    "name": "TriageAgent",
+    "name": "EvidenceGatherApi",
     "kind": "package",
     "apiVersion": "orchestrator.uipath.com/v1",
-    "projectKey": "86bb1f4c-5850-49a5-a909-aa9a558853ea",
+    "projectKey": "b6fc28e3-9f66-4083-a20a-1d0f93e2b929",
     "isOverridable": true,
     "dependencies": [],
     "runtimeDependencies": [],
@@ -14,10 +14,10 @@
       }
     ],
     "spec": {
-      "name": "TriageAgent"
+      "name": "EvidenceGatherApi"
     },
     "locks": [],
-    "key": "216a9156-454d-4f45-bdd6-a081d4ff5181",
+    "key": "42b7244d-0f23-495e-bb08-afe9b5d7d0db",
     "files": []
   }
 }

@@ -1,0 +1,5 @@
+{
+  "ProjectType": "ProcessOrchestration",
+  "Name": "TriageOrchestrationBpmn",
+  "Description": "Aurora Verdict — AML triage BPMN orchestration. Sequences EvidenceGather, TriageAgent, DecisionGate, HITL sign/override, and AuditWrite into a single auditable triage process. Part of the AuroraVerdict solution."
+}

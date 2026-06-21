@@ -1,0 +1,111 @@
+{
+  "docVersion": "1.0.0",
+  "resource": {
+    "name": "TriageOrchestrationBpmn",
+    "kind": "process",
+    "type": "processOrchestration",
+    "apiVersion": "orchestrator.uipath.com/v1",
+    "projectKey": "e5720e56-1ce7-448d-a278-8d0e992ca6a8",
+    "isOverridable": true,
+    "dependencies": [
+      {
+        "kind": "package",
+        "name": "TriageOrchestrationBpmn"
+      }
+    ],
+    "runtimeDependencies": [
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      },
+      {
+        "bindingType": "process",
+        "bindingValues": {},
+        "bindingMetadata": {
+          "bindingsVersion": "v1",
+          "solutionsSupport": "Required"
+        },
+        "resourceKind": "Process"
+      }
+    ],
+    "folders": [
+      {
+        "fullyQualifiedName": "solution_folder"
+      }
+    ],
+    "spec": {
+      "type": "ProcessOrchestration",
+      "name": "TriageOrchestrationBpmn",
+      "package": {
+        "key": "7790afd9-3704-4c1c-b451-cc440eebf5e4"
+      },
+      "targetFrameworkValue": "Portable",
+      "retentionAction": "Delete",
+      "retentionPeriod": 30,
+      "staleRetentionAction": "Delete",
+      "staleRetentionPeriod": 180
+    },
+    "locks": [],
+    "key": "48494f0e-e9e3-49a6-b640-aeeac38465bf",
+    "files": []
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "version": "2.0",
+  "resources": [
+    {
+      "id": "Binding_EvidenceGather_Name",
+      "kind": "process",
+      "name": "EvidenceGatherApi",
+      "resourceKey": "AuroraVerdict.Api.EvidenceGatherApi",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "EvidenceGatherApi",
+        "SolutionsSupport": "Required",
+        "PropertyAttribute": "Name"
+      },
+      "resource": "process",
+      "propertyAttribute": "Name"
+    },
+    {
+      "id": "Binding_EvidenceGather_Folder",
+      "kind": "process",
+      "name": "EvidenceGatherApi",
+      "resourceKey": "AuroraVerdict.Api.EvidenceGatherApi",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "EvidenceGatherApi",
+        "SolutionsSupport": "Required",
+        "PropertyAttribute": "FolderPath"
+      },
+      "resource": "process",
+      "propertyAttribute": "FolderPath"
+    },
+    {
+      "id": "Binding_TriageAgent_Name",
+      "kind": "process",
+      "name": "TriageAgent",
+      "resourceKey": "AuroraVerdict.Agent.TriageAgent",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "TriageAgent",
+        "SolutionsSupport": "Required",
+        "SubType": "Agent",
+        "PropertyAttribute": "name"
+      },
+      "resource": "process",
+      "resourceSubType": "Agent",
+      "propertyAttribute": "name"
+    },
+    {
+      "id": "Binding_TriageAgent_Folder",
+      "kind": "process",
+      "name": "TriageAgent",
+      "resourceKey": "AuroraVerdict.Agent.TriageAgent",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "TriageAgent",
+        "SolutionsSupport": "Required",
+        "SubType": "Agent",
+        "PropertyAttribute": "folderPath"
+      },
+      "resource": "process",
+      "resourceSubType": "Agent",
+      "propertyAttribute": "folderPath"
+    },
+    {
+      "id": "Binding_DecisionGate_Name",
+      "kind": "process",
+      "name": "DecisionGateApi",
+      "resourceKey": "AuroraVerdict.Api.DecisionGateApi",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "DecisionGateApi",
+        "SolutionsSupport": "Required",
+        "PropertyAttribute": "Name"
+      },
+      "resource": "process",
+      "propertyAttribute": "Name"
+    },
+    {
+      "id": "Binding_DecisionGate_Folder",
+      "kind": "process",
+      "name": "DecisionGateApi",
+      "resourceKey": "AuroraVerdict.Api.DecisionGateApi",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "DecisionGateApi",
+        "SolutionsSupport": "Required",
+        "PropertyAttribute": "FolderPath"
+      },
+      "resource": "process",
+      "propertyAttribute": "FolderPath"
+    },
+    {
+      "id": "Binding_AuditWrite_Name",
+      "kind": "process",
+      "name": "AuditWriteApi",
+      "resourceKey": "AuroraVerdict.Api.AuditWriteApi",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "AuditWriteApi",
+        "SolutionsSupport": "Required",
+        "PropertyAttribute": "Name"
+      },
+      "resource": "process",
+      "propertyAttribute": "Name"
+    },
+    {
+      "id": "Binding_AuditWrite_Folder",
+      "kind": "process",
+      "name": "AuditWriteApi",
+      "resourceKey": "AuroraVerdict.Api.AuditWriteApi",
+      "metadata": {
+        "BindingsVersion": "v1",
+        "DisplayLabel": "AuditWriteApi",
+        "SolutionsSupport": "Required",
+        "PropertyAttribute": "FolderPath"
+      },
+      "resource": "process",
+      "propertyAttribute": "FolderPath"
+    }
+  ]
+}

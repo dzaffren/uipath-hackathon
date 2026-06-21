@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:uipath="http://uipath.org/schema/bpmn"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  exporter="UiPath Maestro (https://uipath.com)"
+  exporterVersion="development">
+
+  <bpmn:process id="Process_TriageOrchestration" name="AML Triage Orchestration" isExecutable="true">
+    <bpmn:extensionElements>
+
+      <uipath:variables version="v1">
+        <uipath:inputOutput id="Var_AlertReference" name="alert_reference" type="string" elementId="Start_Triage" />
+        <uipath:inputOutput id="Var_EvidenceResult" name="evidence_result" type="json" />
+        <uipath:inputOutput id="Var_AgentResult" name="agent_result" type="json" />
+        <uipath:inputOutput id="Var_GateResult" name="gate_result" type="json" />
+        <uipath:inputOutput id="Var_Route" name="route" type="string" default="medium_signoff" />
+        <uipath:inputOutput id="Var_HITLResult" name="hitl_result" type="json" />
+        <uipath:inputOutput id="Var_AuditInput" name="audit_input" type="json" />
+        <uipath:inputOutput id="Var_AuditResult" name="audit_result" type="json" />
+      </uipath:variables>
+
+      <uipath:bindings version="v1">
+        <uipath:binding id="Binding_EvidenceGather_Name" name="EvidenceGatherApi" type="process" elementId="Task_EvidenceGather" resource="process" resourceKey="AuroraVerdict.Api.EvidenceGatherApi" propertyAttribute="Name" />
+        <uipath:binding id="Binding_EvidenceGather_Folder" name="EvidenceGatherApi" type="process" elementId="Task_EvidenceGather" resource="process" resourceKey="AuroraVerdict.Api.EvidenceGatherApi" propertyAttribute="FolderPath" />
+        <uipath:binding id="Binding_TriageAgent_Name" name="TriageAgent" type="process" elementId="Task_TriageAgent" resource="process" resourceSubType="Agent" resourceKey="AuroraVerdict.Agent.TriageAgent" propertyAttribute="name" />
+        <uipath:binding id="Binding_TriageAgent_Folder" name="TriageAgent" type="process" elementId="Task_TriageAgent" resource="process" resourceSubType="Agent" resourceKey="AuroraVerdict.Agent.TriageAgent" propertyAttribute="folderPath" />
+        <uipath:binding id="Binding_DecisionGate_Name" name="DecisionGateApi" type="process" elementId="Task_DecisionGate" resource="process" resourceKey="AuroraVerdict.Api.DecisionGateApi" propertyAttribute="Name" />
+        <uipath:binding id="Binding_DecisionGate_Folder" name="DecisionGateApi" type="process" elementId="Task_DecisionGate" resource="process" resourceKey="AuroraVerdict.Api.DecisionGateApi" propertyAttribute="FolderPath" />
+        <uipath:binding id="Binding_AuditWrite_Name" name="AuditWriteApi" type="process" elementId="Task_AuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="Name" />
+        <uipath:binding id="Binding_AuditWrite_Folder" name="AuditWriteApi" type="process" elementId="Task_AuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="FolderPath" />
+      </uipath:bindings>
+
+    </bpmn:extensionElements>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- START                                                        -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:startEvent id="Start_Triage" name="core.trigger.manual">
+      <bpmn:extensionElements>
+        <uipath:entryPointId value="c7f4a891-b3d2-4e5f-9a1c-2b3d4e5f6a7b" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_Start_To_Evidence</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 1: EvidenceGather API Workflow                          -->
+    <!--   Orchestrator.ExecuteApiWorkflowAsync → uipath:activity    -->
+    <!--   (context, inputs, outputs ALL inside uipath:activity)     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_EvidenceGather" name="Gather Evidence">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_EvidenceGather_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_EvidenceGather_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_reference":"=vars.Var_AlertReference"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_EvidenceResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_To_Evidence</bpmn:incoming>
+      <bpmn:outgoing>Flow_Evidence_To_Agent</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 2: Triage Agent                                         -->
+    <!--   Orchestrator.StartAgentJob → uipath:activity              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_TriageAgent" name="Run Triage Agent">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.StartAgentJob" version="v1" />
+          <uipath:context>
+            <uipath:input name="name" type="string" value="=bindings.Binding_TriageAgent_Name" />
+            <uipath:input name="folderPath" type="string" value="=bindings.Binding_TriageAgent_Folder" />
+          </uipath:context>
+          <uipath:input name="JobArguments" type="json" target="bodyField"><![CDATA[{"alert_reference":"=vars.Var_AlertReference","evidence_bundle":"=vars.Var_EvidenceResult"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_AgentResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Evidence_To_Agent</bpmn:incoming>
+      <bpmn:outgoing>Flow_Agent_To_Gate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 3: DecisionGate API Workflow                            -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_DecisionGate" name="Validate Citations">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_DecisionGate_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_DecisionGate_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_id":"=vars.Var_EvidenceResult.alert_id","evidence_bundle":"=vars.Var_EvidenceResult.evidence_bundle","agent_output":"=vars.Var_AgentResult"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_GateResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Agent_To_Gate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gate_To_Router</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- GATEWAY: Route on Var_Route                                  -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:exclusiveGateway id="Gateway_Route" name="Route?">
+      <bpmn:incoming>Flow_Gate_To_Router</bpmn:incoming>
+      <bpmn:outgoing>Flow_Router_To_HITL</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 4: Human-in-the-Loop Sign / Override                   -->
+    <!--   Actions.HITL → uipath:activity                            -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:userTask id="Task_HITL" name="Sign or Override">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Actions.HITL" version="v1" />
+          <uipath:input name="HitlTaskArguments" type="json" target="bodyField"><![CDATA[{
+  "title": "AML Alert Triage Review",
+  "fields": [
+    {"id": "recommendation", "label": "Recommendation", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.final_risk_tier"},
+    {"id": "riskTier", "label": "Risk Tier", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.final_risk_tier"},
+    {"id": "confidence", "label": "Agent Confidence (%)", "type": "number", "direction": "input", "value": "=vars.Var_AgentResult.confidence"},
+    {"id": "rationale", "label": "Rationale", "type": "text", "direction": "input", "value": "=vars.Var_AgentResult.rationale"},
+    {"id": "citationCheck", "label": "Citation Check", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.validated_citations"},
+    {"id": "unverifiedWarning", "label": "Has Unverified Citations", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.has_unverified"},
+    {"id": "overrideReason", "label": "Override Reason (required if overriding)", "type": "text", "direction": "output"}
+  ],
+  "outcomes": [
+    {"id": "sign", "name": "Sign — agree with assessment", "isPrimary": true, "action": "Continue"},
+    {"id": "override", "name": "Override", "action": "End", "requires": ["overrideReason"]}
+  ]
+}]]></uipath:input>
+          <uipath:output name="Process response" type="Actions.HITL" var="Var_HITLResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Router_To_HITL</bpmn:incoming>
+      <bpmn:outgoing>Flow_HITL_To_BuildAudit</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 5: Build AuditWrite payload (ScriptTask)                -->
+    <!--   BPMN.ScriptTask → uipath:mapping (EXCEPTION to the rule)  -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:scriptTask id="Task_BuildAudit" name="Build Audit Payload" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "evidenceResult": "=vars.Var_EvidenceResult",
+  "agentResult": "=vars.Var_AgentResult",
+  "gateResult": "=vars.Var_GateResult",
+  "hitlResult": "=vars.Var_HITLResult"
+}]]></uipath:input>
+          <uipath:output name="audit_input" type="json" var="Var_AuditInput" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_HITL_To_BuildAudit</bpmn:incoming>
+      <bpmn:outgoing>Flow_BuildAudit_To_AuditWrite</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var alertId = (evidenceResult && evidenceResult.alert_id) ? evidenceResult.alert_id : '';
+var finalRiskTier = (gateResult && gateResult.final_risk_tier) ? gateResult.final_risk_tier : 'medium';
+var originalTier = (agentResult && agentResult.risk_tier) ? agentResult.risk_tier : 'medium';
+var outcomeId = (hitlResult && hitlResult.outcomeId) ? hitlResult.outcomeId : 'sign';
+var humanAction = (outcomeId === 'sign') ? 'signed_agree' : 'override';
+var overrideReason = '';
+if (hitlResult && hitlResult.fields && hitlResult.fields.overrideReason) {
+  overrideReason = hitlResult.fields.overrideReason;
+}
+var finalDisposition = (humanAction === 'signed_agree') ? 'closed' : 'escalated';
+var decisionMakerName = (hitlResult && hitlResult.completedBy) ? hitlResult.completedBy : 'Analyst';
+var now = new Date().toISOString();
+return {
+  alert_id: alertId,
+  final_risk_tier: finalRiskTier,
+  original_proposed_tier: originalTier,
+  route_taken: 'medium_signoff',
+  decision_maker_name: decisionMakerName,
+  human_action: humanAction,
+  override_reason: overrideReason,
+  decision_timestamp: now,
+  final_disposition: finalDisposition,
+  disposition_timestamp: now
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 6: AuditWrite API Workflow                              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:serviceTask id="Task_AuditWrite" name="Write Decision Record">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_AuditWrite_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_AuditWrite_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_id":"=vars.Var_AuditInput.alert_id","final_risk_tier":"=vars.Var_AuditInput.final_risk_tier","original_proposed_tier":"=vars.Var_AuditInput.original_proposed_tier","route_taken":"=vars.Var_AuditInput.route_taken","decision_maker_name":"=vars.Var_AuditInput.decision_maker_name","human_action":"=vars.Var_AuditInput.human_action","override_reason":"=vars.Var_AuditInput.override_reason","decision_timestamp":"=vars.Var_AuditInput.decision_timestamp","final_disposition":"=vars.Var_AuditInput.final_disposition","disposition_timestamp":"=vars.Var_AuditInput.disposition_timestamp"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_AuditResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BuildAudit_To_AuditWrite</bpmn:incoming>
+      <bpmn:outgoing>Flow_AuditWrite_To_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- END                                                          -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:endEvent id="End_Done" name="Triage complete">
+      <bpmn:incoming>Flow_AuditWrite_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SEQUENCE FLOWS                                               -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:sequenceFlow id="Flow_Start_To_Evidence" sourceRef="Start_Triage" targetRef="Task_EvidenceGather" />
+    <bpmn:sequenceFlow id="Flow_Evidence_To_Agent" sourceRef="Task_EvidenceGather" targetRef="Task_TriageAgent" />
+    <bpmn:sequenceFlow id="Flow_Agent_To_Gate" sourceRef="Task_TriageAgent" targetRef="Task_DecisionGate" />
+    <bpmn:sequenceFlow id="Flow_Gate_To_Router" sourceRef="Task_DecisionGate" targetRef="Gateway_Route" />
+    <bpmn:sequenceFlow id="Flow_Router_To_HITL" sourceRef="Gateway_Route" targetRef="Task_HITL">
+      <bpmn:conditionExpression>=vars.Var_Route == "medium_signoff"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_HITL_To_BuildAudit" sourceRef="Task_HITL" targetRef="Task_BuildAudit" />
+    <bpmn:sequenceFlow id="Flow_BuildAudit_To_AuditWrite" sourceRef="Task_BuildAudit" targetRef="Task_AuditWrite" />
+    <bpmn:sequenceFlow id="Flow_AuditWrite_To_End" sourceRef="Task_AuditWrite" targetRef="End_Done" />
+
+  </bpmn:process>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- DIAGRAM                                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_TriageOrchestration">
+
+      <bpmndi:BPMNShape id="S_Start_Triage" bpmnElement="Start_Triage">
+        <dc:Bounds x="80" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="53" y="185" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_EvidenceGather" bpmnElement="Task_EvidenceGather">
+        <dc:Bounds x="170" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_TriageAgent" bpmnElement="Task_TriageAgent">
+        <dc:Bounds x="350" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_DecisionGate" bpmnElement="Task_DecisionGate">
+        <dc:Bounds x="530" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Gateway_Route" bpmnElement="Gateway_Route" isMarkerVisible="true">
+        <dc:Bounds x="715" y="135" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="718" y="192" width="44" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_HITL" bpmnElement="Task_HITL">
+        <dc:Bounds x="830" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_BuildAudit" bpmnElement="Task_BuildAudit">
+        <dc:Bounds x="1010" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_AuditWrite" bpmnElement="Task_AuditWrite">
+        <dc:Bounds x="1190" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_End_Done" bpmnElement="End_Done">
+        <dc:Bounds x="1372" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1350" y="185" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="E_Flow_Start_To_Evidence" bpmnElement="Flow_Start_To_Evidence">
+        <di:waypoint x="116" y="160" />
+        <di:waypoint x="170" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Evidence_To_Agent" bpmnElement="Flow_Evidence_To_Agent">
+        <di:waypoint x="290" y="160" />
+        <di:waypoint x="350" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Agent_To_Gate" bpmnElement="Flow_Agent_To_Gate">
+        <di:waypoint x="470" y="160" />
+        <di:waypoint x="530" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Gate_To_Router" bpmnElement="Flow_Gate_To_Router">
+        <di:waypoint x="650" y="160" />
+        <di:waypoint x="715" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Router_To_HITL" bpmnElement="Flow_Router_To_HITL">
+        <di:waypoint x="765" y="160" />
+        <di:waypoint x="830" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_HITL_To_BuildAudit" bpmnElement="Flow_HITL_To_BuildAudit">
+        <di:waypoint x="950" y="160" />
+        <di:waypoint x="1010" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_BuildAudit_To_AuditWrite" bpmnElement="Flow_BuildAudit_To_AuditWrite">
+        <di:waypoint x="1130" y="160" />
+        <di:waypoint x="1190" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_AuditWrite_To_End" bpmnElement="Flow_AuditWrite_To_End">
+        <di:waypoint x="1310" y="160" />
+        <di:waypoint x="1372" y="160" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>
