@@ -1,0 +1,368 @@
+{
+  "document": {
+    "dsl": "1.0.0",
+    "name": "AuditWrite",
+    "version": "0.0.1",
+    "namespace": "default",
+    "metadata": {
+      "variables": {
+        "schema": {
+          "format": "json",
+          "document": {
+            "type": "object",
+            "properties": {
+              "record_exists":       { "type": "boolean", "default": false },
+              "decision_record_id":  { "type": "string",  "default": "" },
+              "triggers_to_insert":  { "type": "array",   "default": [] }
+            },
+            "title": "Variables"
+          }
+        }
+      }
+    }
+  },
+  "input": {
+    "schema": {
+      "format": "json",
+      "document": {
+        "type": "object",
+        "properties": {
+          "alert_id":               { "type": "string"  },
+          "final_risk_tier":        { "type": "string"  },
+          "original_proposed_tier": { "type": "string"  },
+          "route_taken":            { "type": "string"  },
+          "tier_was_forced":        { "type": "boolean" },
+          "red_flags":              { "type": "array"   },
+          "decision_maker_name":    { "type": "string"  },
+          "human_action":           { "type": "string"  },
+          "override_reason":        { "type": "string"  },
+          "decision_timestamp":     { "type": "string"  },
+          "final_disposition":      { "type": "string"  },
+          "disposition_timestamp":  { "type": "string"  },
+          "challenger_outcome":     { "type": "string"  },
+          "challenger_dispute":     { "type": "string"  },
+          "reviewer_reason":        { "type": "string"  }
+        },
+        "required": ["alert_id", "human_action", "decision_maker_name", "final_disposition"],
+        "title": "Inputs"
+      }
+    }
+  },
+  "output": {
+    "schema": {
+      "format": "json",
+      "document": {
+        "type": "object",
+        "properties": {
+          "decision_record_id": { "type": "string"  },
+          "was_existing":       { "type": "boolean" }
+        },
+        "title": "Outputs"
+      }
+    }
+  },
+  "do": [
+    {
+      "Sequence_1": {
+        "do": [
+          {
+            "WorkflowStart": {
+              "set": "${Object.entries($workflow.definition?.document?.metadata?.variables?.schema?.document?.properties || {}).reduce((acc, [name, def]) => ({ ...acc, [name]: def?.default }), {}) }",
+              "output": { "as": "${$input}" },
+              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
+              "metadata": { "activityType": "Assign", "displayName": "Workflow start", "fullName": "Assign", "isTransparent": true }
+            }
+          },
+          {
+            "Javascript_ValidateInputs": {
+              "run": {
+                "script": {
+                  "code": "const alertId = $workflow.input.alert_id;\nconst humanAction = $workflow.input.human_action;\nconst decisionMakerName = $workflow.input.decision_maker_name;\nconst finalDisposition = $workflow.input.final_disposition;\nconst overrideReason = $workflow.input.override_reason;\nif (!alertId) throw new Error('VALIDATION_ERROR: alert_id is required');\nif (!humanAction || (humanAction !== 'signed_agree' && humanAction !== 'override')) throw new Error('VALIDATION_ERROR: human_action must be signed_agree or override');\nif (humanAction === 'override' && (!overrideReason || overrideReason.trim() === '')) throw new Error('OVERRIDE_REASON_REQUIRED: override_reason is required when human_action is override');\nif (!decisionMakerName) throw new Error('VALIDATION_ERROR: decision_maker_name is required');\nif (!finalDisposition) throw new Error('VALIDATION_ERROR: final_disposition is required');\nconst RISK_TIER_MAP = { 'low': 0, 'medium': 1, 'high': 2 };\nconst ROUTE_MAP = { 'low_batch': 0, 'medium_signoff': 1, 'high_challenger': 2 };\nconst HUMAN_ACTION_MAP = { 'signed_agree': 0, 'override': 1 };\nconst DISPOSITION_MAP = { 'closed': 0, 'escalated': 1, 'sent_to_edd': 2 };\nconst finalTier = ($workflow.input.final_risk_tier || 'medium').toLowerCase();\nconst originalTier = ($workflow.input.original_proposed_tier || finalTier).toLowerCase();\nconst routeTaken = ($workflow.input.route_taken || 'medium_signoff').toLowerCase();\nconst disp = finalDisposition.toLowerCase();\nconst tierWasForced = $workflow.input.tier_was_forced === true;\nconst challengerOutcomeInput = ($workflow.input.challenger_outcome || '').toLowerCase();\nconst CHALLENGER_OUTCOME_MAP = { '': 0, 'not_applicable': 0, 'agreed': 1, 'disagreed': 2 };\nconst challengerOutcomeNumberId = CHALLENGER_OUTCOME_MAP[challengerOutcomeInput] !== undefined ? CHALLENGER_OUTCOME_MAP[challengerOutcomeInput] : 0;\nreturn { final_risk_tier_number_id: RISK_TIER_MAP[finalTier] !== undefined ? RISK_TIER_MAP[finalTier] : 1, original_proposed_tier_number_id: RISK_TIER_MAP[originalTier] !== undefined ? RISK_TIER_MAP[originalTier] : 1, route_taken_number_id: ROUTE_MAP[routeTaken] !== undefined ? ROUTE_MAP[routeTaken] : 1, human_action_number_id: HUMAN_ACTION_MAP[humanAction], challenger_outcome_number_id: challengerOutcomeNumberId, final_disposition_number_id: DISPOSITION_MAP[disp] !== undefined ? DISPOSITION_MAP[disp] : 0, tier_was_forced: tierWasForced };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateInputs\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Validate inputs and map NumberIds", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "QueryEntityRecordsCurated_CheckDecision": {
+              "call": "UiPath.IntSvc",
+              "with": {
+                "Connector": "uipath-uipath-dataservice",
+                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                "Method": "POST",
+                "Endpoint": "/v2/{entityName}/qer",
+                "QueryParameters": { "queryExpression": "${\"AlertLink = '\" + $workflow.input.alert_id + \"'\"}", "limit": 1 },
+                "PathParameters": { "entityName": "DecisionRecord" },
+                "BodyParameters": {}
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckDecision\": $output } }" },
+              "metadata": {
+                "fullName": "Connector",
+                "activityType": "Connector",
+                "displayName": "Query DecisionRecord for idempotency",
+                "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
+                "assemblyQualifiedName": "Connector",
+                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+              }
+            }
+          },
+          {
+            "Javascript_ProcessDecisionQuery": {
+              "run": {
+                "script": {
+                  "code": "const qr = $context.outputs.QueryEntityRecordsCurated_CheckDecision;\nconst items = (qr && qr.content && Array.isArray(qr.content.value)) ? qr.content.value : (qr && qr.content && Array.isArray(qr.content.Value)) ? qr.content.Value : (Array.isArray(qr) ? qr : []);\nconst exists = items.length > 0;\nconst record_id = exists ? (items[0].Id !== undefined ? items[0].Id : items[0].id !== undefined ? items[0].id : '') : '';\nreturn { exists, record_id };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ProcessDecisionQuery\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Process decision query result", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Assign_RecordExists": {
+              "set": { "record_exists": "${$context.outputs.Javascript_ProcessDecisionQuery.exists}" },
+              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
+              "metadata": { "activityType": "Assign", "displayName": "Set record_exists", "fullName": "Assign", "isTransparent": false }
+            }
+          },
+          {
+            "Assign_DecisionRecordId": {
+              "set": { "decision_record_id": "${$context.outputs.Javascript_ProcessDecisionQuery.record_id}" },
+              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
+              "metadata": { "activityType": "Assign", "displayName": "Set decision_record_id from existing", "fullName": "Assign", "isTransparent": false }
+            }
+          },
+          {
+            "If_3#Wrapper": {
+              "do": [
+                {
+                  "If_3": {
+                    "switch": [
+                      {
+                        "case": {
+                          "when": "${!$context.variables.record_exists}",
+                          "then": "If_3#Then"
+                        }
+                      },
+                      { "default": { "then": "If_3#Else" } }
+                    ],
+                    "metadata": { "displayName": "DecisionRecord does not yet exist?" }
+                  }
+                },
+                {
+                  "If_3#Then": {
+                    "do": [
+                      {
+                        "CreateEntityRecordCurated_DecisionRecord": {
+                          "call": "UiPath.IntSvc",
+                          "with": {
+                            "Connector": "uipath-uipath-dataservice",
+                            "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                            "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                            "Method": "POST",
+                            "Endpoint": "/v2/{entityName}/CreateEntityRecord",
+                            "QueryParameters": {},
+                            "PathParameters": { "entityName": "DecisionRecord" },
+                            "BodyParameters": {
+                              "AlertLink": "${$workflow.input.alert_id}",
+                              "FinalRiskTier": "${$context.outputs.Javascript_ValidateInputs.final_risk_tier_number_id}",
+                              "TierWasForced": "${$context.outputs.Javascript_ValidateInputs.tier_was_forced}",
+                              "OriginalProposedTier": "${$context.outputs.Javascript_ValidateInputs.original_proposed_tier_number_id}",
+                              "RouteTaken": "${$context.outputs.Javascript_ValidateInputs.route_taken_number_id}",
+                              "ChallengerOutcome": "${$context.outputs.Javascript_ValidateInputs.challenger_outcome_number_id}",
+                              "ChallengerDispute": "${$workflow.input.challenger_dispute || ''}",
+                              "DecisionMakerName": "${$workflow.input.decision_maker_name}",
+                              "HumanAction": "${$context.outputs.Javascript_ValidateInputs.human_action_number_id}",
+                              "OverrideReason": "${$workflow.input.override_reason || ''}",
+                              "DecisionTimestamp": "${$workflow.input.decision_timestamp || ''}",
+                              "FinalDisposition": "${$context.outputs.Javascript_ValidateInputs.final_disposition_number_id}",
+                              "DispositionTimestamp": "${$workflow.input.disposition_timestamp || ''}",
+                              "WasPulledForReview": false
+                            }
+                          },
+                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_DecisionRecord\": $output } }" },
+                          "metadata": {
+                            "fullName": "Connector",
+                            "activityType": "Connector",
+                            "displayName": "Create DecisionRecord",
+                            "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
+                            "assemblyQualifiedName": "Connector",
+                            "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                          }
+                        }
+                      },
+                      {
+                        "Javascript_ExtractDecisionId": {
+                          "run": {
+                            "script": {
+                              "code": "const cr = $context.outputs.CreateEntityRecordCurated_DecisionRecord;\nconst id = (cr && cr.content && cr.content.Id !== undefined) ? cr.content.Id : (cr && cr.content && cr.content.id !== undefined) ? cr.content.id : '';\nreturn id;",
+                              "language": "javascript",
+                              "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                            }
+                          },
+                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractDecisionId\": $output } }" },
+                          "metadata": { "activityType": "JsInvoke", "displayName": "Extract DecisionRecord UUID", "fullName": "JsInvoke" }
+                        }
+                      },
+                      {
+                        "Assign_NewDecisionRecordId": {
+                          "set": { "decision_record_id": "${$context.outputs.Javascript_ExtractDecisionId}" },
+                          "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
+                          "metadata": { "activityType": "Assign", "displayName": "Set decision_record_id from create", "fullName": "Assign", "isTransparent": false }
+                        }
+                      }
+                    ],
+                    "then": "exit"
+                  }
+                },
+                {
+                  "If_3#Else": {
+                    "do": [],
+                    "then": "exit"
+                  }
+                }
+              ],
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"If_3\": $output } }" },
+              "metadata": { "activityType": "If", "displayName": "Insert DecisionRecord if new", "fullName": "If" }
+            }
+          },
+          {
+            "QueryEntityRecordsCurated_ExistingTriggers": {
+              "call": "UiPath.IntSvc",
+              "with": {
+                "Connector": "uipath-uipath-dataservice",
+                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                "Method": "POST",
+                "Endpoint": "/v2/{entityName}/qer",
+                "QueryParameters": { "queryExpression": "${\"AlertLink = '\" + $workflow.input.alert_id + \"'\"}" },
+                "PathParameters": { "entityName": "RedFlagTrigger" },
+                "BodyParameters": {}
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_ExistingTriggers\": $output } }" },
+              "metadata": {
+                "fullName": "Connector",
+                "activityType": "Connector",
+                "displayName": "Query existing RedFlagTrigger rows",
+                "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
+                "assemblyQualifiedName": "Connector",
+                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+              }
+            }
+          },
+          {
+            "Javascript_FilterNewTriggers": {
+              "run": {
+                "script": {
+                  "code": "const TRIGGER_KIND_MAP = { 'sanctions': 0, 'pep': 1, 'structuring': 2, 'jurisdiction': 3, 'watchlist': 4 };\nconst qr = $context.outputs.QueryEntityRecordsCurated_ExistingTriggers;\nconst existing = (qr && qr.content && Array.isArray(qr.content.value)) ? qr.content.value : (qr && qr.content && Array.isArray(qr.content.Value)) ? qr.content.Value : (Array.isArray(qr) ? qr : []);\nconst existingKindIds = new Set(existing.map(function(r) { return r.TriggerKind !== undefined ? r.TriggerKind : r.triggerkind; }));\nconst redFlags = Array.isArray($workflow.input.red_flags) ? $workflow.input.red_flags : [];\nconst toInsert = [];\nfor (let i = 0; i < redFlags.length; i++) {\n  const flag = redFlags[i];\n  const kindId = TRIGGER_KIND_MAP[flag.kind];\n  if (kindId !== undefined && !existingKindIds.has(kindId)) {\n    toInsert.push({ kind_number_id: kindId, detail: flag.detail || '' });\n    existingKindIds.add(kindId);\n  }\n}\nreturn { triggers_to_insert: toInsert };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
+              },
+              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_FilterNewTriggers\": $output } }" },
+              "metadata": { "activityType": "JsInvoke", "displayName": "Filter new RedFlagTrigger rows to insert", "fullName": "JsInvoke" }
+            }
+          },
+          {
+            "Assign_TriggersToInsert": {
+              "set": { "triggers_to_insert": "${$context.outputs.Javascript_FilterNewTriggers.triggers_to_insert}" },
+              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
+              "metadata": { "activityType": "Assign", "displayName": "Store triggers_to_insert", "fullName": "Assign", "isTransparent": false }
+            }
+          },
+          {
+            "For_Each_RedFlags": {
+              "for": {
+                "each": "triggerItem",
+                "in": "${$context.variables.triggers_to_insert}",
+                "at": "triggerItemIndex"
+              },
+              "do": [
+                {
+                  "For_Each_RedFlags#Body": {
+                    "do": [
+                      {
+                        "Try_Catch_RedFlag": {
+                          "try": [
+                            {
+                              "CreateEntityRecordCurated_RedFlagTrigger": {
+                                "call": "UiPath.IntSvc",
+                                "with": {
+                                  "Connector": "uipath-uipath-dataservice",
+                                  "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                                  "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
+                                  "Method": "POST",
+                                  "Endpoint": "/v2/{entityName}/CreateEntityRecord",
+                                  "QueryParameters": {},
+                                  "PathParameters": { "entityName": "RedFlagTrigger" },
+                                  "BodyParameters": {
+                                    "AlertLink": "${$workflow.input.alert_id}",
+                                    "TriggerKind": "${$triggerItem.kind_number_id}",
+                                    "TriggerDetail": "${$triggerItem.detail}"
+                                  }
+                                },
+                                "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_RedFlagTrigger\": $output } }" },
+                                "metadata": {
+                                  "fullName": "Connector",
+                                  "activityType": "Connector",
+                                  "displayName": "Create RedFlagTrigger record",
+                                  "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
+                                  "assemblyQualifiedName": "Connector",
+                                  "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                                }
+                              }
+                            }
+                          ],
+                          "catch": {
+                            "as": "triggerInsertError",
+                            "do": [
+                              {
+                                "Javascript_LogTriggerError": {
+                                  "run": {
+                                    "script": {
+                                      "code": "return { skipped: true, reason: 'duplicate_or_error' };",
+                                      "language": "javascript",
+                                      "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                                    }
+                                  },
+                                  "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_LogTriggerError\": $output } }" },
+                                  "metadata": { "activityType": "JsInvoke", "displayName": "Log trigger insert skip", "fullName": "JsInvoke" }
+                                }
+                              }
+                            ]
+                          },
+                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Try_Catch_RedFlag\": $output } }" },
+                          "metadata": { "activityType": "TryCatch", "displayName": "Insert RedFlagTrigger (idempotent)", "fullName": "TryCatch" }
+                        }
+                      }
+                    ],
+                    "export": {
+                      "as": "{ ...$context, outputs: { ...$context?.outputs, \"For_Each_RedFlags\": { ...$context?.outputs?.For_Each_RedFlags, results: [ ...($triggerItemIndex == 0 ? [] : ($context?.outputs?.For_Each_RedFlags?.results ?? [])), ...([$output] ?? []) ] } } }"
+                    }
+                  }
+                }
+              ],
+              "output": { "as": "${$context.outputs.For_Each_RedFlags}" },
+              "metadata": { "activityType": "ForEach", "displayName": "Insert RedFlagTrigger rows", "fullName": "ForEach" }
+            }
+          },
+          {
+            "Response_3": {
+              "response": "${{ decision_record_id: $context.variables.decision_record_id, was_existing: $context.variables.record_exists }}",
+              "markJobAsFailed": false,
+              "then": "end",
+              "metadata": { "activityType": "Response", "displayName": "Return decision record result", "fullName": "Response" }
+            }
+          }
+        ],
+        "metadata": { "activityType": "Sequence", "displayName": "Sequence", "fullName": "Sequence" }
+      }
+    }
+  ],
+  "evaluate": { "mode": "strict", "language": "javascript" }
+}

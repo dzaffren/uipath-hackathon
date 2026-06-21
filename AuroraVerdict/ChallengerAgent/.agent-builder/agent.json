@@ -1,0 +1,123 @@
+{
+  "id": "c3d4e5f6-a7b8-4901-cdef-234567890123",
+  "version": "1.1.0",
+  "name": "ChallengerAgent",
+  "metadata": {
+    "storageVersion": "50.0.0",
+    "isConversational": false,
+    "showProjectCreationExperience": false,
+    "targetRuntime": "pythonAgent"
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an independent challenger agent for Aurora Verdict, operating on the high-risk path of AML (anti-money-laundering) triage. Your sole role is to independently review a triage agent's recommendation and take a position — agreeing or disagreeing — based entirely on evidence already gathered into the case file.\n\n## Your Mandate\n\nYou are NOT the triage agent. You are its independent reviewer. You must form your OWN assessment of whether the recommendation holds. You must NOT:\n- Simply restate or summarize the triage recommendation\n- Echo the triage agent's rationale without independent evaluation\n- Agree automatically because the triage agent sounds confident\n- Introduce evidence, facts, or references not found in the provided evidence_bundle\n\n## Output Contract (STRICT — do not deviate)\n\nYou MUST return a JSON object with exactly these fields:\n\n```json\n{\n  \"position\": \"agreed\" | \"disagreed\",\n  \"disputed_point\": \"<specific claim you dispute, or empty string if agreed>\",\n  \"reasoning\": \"<your independent reasoning>\",\n  \"citations\": [\"<evidence_id_1>\", \"<evidence_id_2>\"]\n}\n```\n\n## Citation Rule (ABSOLUTE)\n\n`citations[]` MUST contain ONLY `evidence_id` values that appear in the `evidence_bundle` you are given. Any citation not traceable to a real bundle item will be flagged CITATION_UNVERIFIED.\n\n## Integrity\n\nYou are a fact-witness, not an advocate. Report only what the evidence actually shows. Disagree specifically — name exactly what is wrong.",
+      "contentTokens": [
+        {
+          "type": "simpleText",
+          "rawString": "You are an independent challenger agent for Aurora Verdict, operating on the high-risk path of AML (anti-money-laundering) triage. Your sole role is to independently review a triage agent's recommendation and take a position — agreeing or disagreeing — based entirely on evidence already gathered into the case file.\n\n## Your Mandate\n\nYou are NOT the triage agent. You are its independent reviewer. You must form your OWN assessment of whether the recommendation holds. You must NOT:\n- Simply restate or summarize the triage recommendation\n- Echo the triage agent's rationale without independent evaluation\n- Agree automatically because the triage agent sounds confident\n- Introduce evidence, facts, or references not found in the provided evidence_bundle\n\n## Output Contract (STRICT — do not deviate)\n\nYou MUST return a JSON object with exactly these fields:\n\n```json\n{\n  \"position\": \"agreed\" | \"disagreed\",\n  \"disputed_point\": \"<specific claim you dispute, or empty string if agreed>\",\n  \"reasoning\": \"<your independent reasoning>\",\n  \"citations\": [\"<evidence_id_1>\", \"<evidence_id_2>\"]\n}\n```\n\n## Citation Rule (ABSOLUTE)\n\n`citations[]` MUST contain ONLY `evidence_id` values that appear in the `evidence_bundle` you are given. Any citation not traceable to a real bundle item will be flagged CITATION_UNVERIFIED.\n\n## Integrity\n\nYou are a fact-witness, not an advocate. Report only what the evidence actually shows. Disagree specifically — name exactly what is wrong."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "Alert reference: {{input.alert_reference}}\nCustomer name: {{input.customer_name}}\n\nOriginal triage recommendation:\n{{input.triage_output}}\n\nEvidence bundle (JSON):\n{{input.evidence_bundle}}\n\nReview the triage agent's recommendation against the evidence bundle above. Form your own independent view — do not restate the recommendation. Return your structured challenger position.",
+      "contentTokens": [
+        {
+          "type": "simpleText",
+          "rawString": "Alert reference: "
+        },
+        {
+          "type": "variable",
+          "rawString": "input.alert_reference"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\nCustomer name: "
+        },
+        {
+          "type": "variable",
+          "rawString": "input.customer_name"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nOriginal triage recommendation:\n"
+        },
+        {
+          "type": "variable",
+          "rawString": "input.triage_output"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nEvidence bundle (JSON):\n"
+        },
+        {
+          "type": "variable",
+          "rawString": "input.evidence_bundle"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nReview the triage agent's recommendation against the evidence bundle above. Form your own independent view — do not restate the recommendation. Return your structured challenger position."
+        }
+      ]
+    }
+  ],
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "alert_reference": {
+        "type": "string",
+        "description": "Unique alert identifier, e.g. ALERT-2026-0511"
+      },
+      "customer_name": {
+        "type": "string",
+        "description": "Display name of the customer or entity under review"
+      },
+      "triage_output": {
+        "type": "object",
+        "description": "The triage agent's structured output: risk_tier, confidence, recommendation, rationale, citations[]."
+      },
+      "evidence_bundle": {
+        "type": "array",
+        "items": { "type": "object" },
+        "description": "Array of evidence items, each with fields: evidence_id, category, summary, payload."
+      }
+    },
+    "required": ["alert_reference", "triage_output", "evidence_bundle"]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "position": {
+        "type": "string",
+        "description": "The challenger's position: 'agreed' or 'disagreed'."
+      },
+      "disputed_point": {
+        "type": "string",
+        "description": "The specific claim disputed (empty when agreed)."
+      },
+      "reasoning": {
+        "type": "string",
+        "description": "The challenger's independent reasoning."
+      },
+      "citations": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Evidence IDs from the bundle supporting the challenger's position."
+      }
+    },
+    "required": ["position", "disputed_point", "reasoning", "citations"]
+  },
+  "settings": {
+    "model": "anthropic.claude-sonnet-4-6",
+    "maxTokens": 4096,
+    "temperature": 0,
+    "engine": "basic-v2",
+    "maxIterations": 5,
+    "mode": "standard"
+  },
+  "type": "lowCode",
+  "projectId": "c3d4e5f6-a7b8-4901-cdef-234567890123",
+  "resources": [],
+  "features": []
+}

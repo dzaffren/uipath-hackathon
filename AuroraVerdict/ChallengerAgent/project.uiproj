@@ -1,0 +1,5 @@
+{
+  "ProjectType": "Agent",
+  "Name": "ChallengerAgent",
+  "Description": "Aurora Verdict challenger agent — provides an independent agree/disagree review of the triage recommendation on the high-risk path. Part of the AuroraVerdict solution."
+}
