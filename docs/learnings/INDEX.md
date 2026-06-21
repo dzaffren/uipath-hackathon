@@ -12,6 +12,7 @@ Captured during build sessions. Entries here inform future `/build` runs via Pha
 - [failed-deploy-blocks-redeploy](blocker-failed-deploy-blocks-redeploy.md) — failed solution deploy blocks re-deploy with same name (4004/4007 errors); use a new `--name` to retry
 - [bpmn-gateway-missing-route](blocker-bpmn-gateway-missing-route.md) — adding a new gateway condition without covering all compute_route return values causes a silent runtime stall (no error, process stops)
 - [api-workflow-connector-no-local-test](blocker-api-workflow-connector-no-local-test.md) — `uip api-workflow run` cannot execute Data Service connector steps locally; use a Node.js harness for JS logic and deploy to test connector steps
+- [incremental-bpmn-branch-dependency](blocker-incremental-bpmn-branch-dependency.md) — when a spec depends on gateway stubs added in a prior feature branch, branch off that feature branch (not master); check spec gateway references against master before branching
 
 ## Conventions
 
@@ -21,3 +22,4 @@ Captured during build sessions. Entries here inform future `/build` runs via Pha
 ## Patterns
 
 - [confidence-unit-normalisation](pattern-confidence-unit-normalisation.md) — normalize agent confidence from 0–1 float to 0–100 before threshold comparisons; agents can return either unit
+- [bpmn-shared-api-binding](pattern-bpmn-shared-api-binding.md) — reuse one binding entry for multiple BPMN service tasks invoking the same API-Workflow resource; the elementId scopes each invocation, sharing one entry passes solution pack validation
