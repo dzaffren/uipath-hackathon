@@ -9,16 +9,18 @@
       "input": {
         "type": "object",
         "properties": {
-          "alert_id":               { "type": "string" },
-          "final_risk_tier":        { "type": "string" },
-          "original_proposed_tier": { "type": "string" },
-          "route_taken":            { "type": "string" },
-          "decision_maker_name":    { "type": "string" },
-          "human_action":           { "type": "string" },
-          "override_reason":        { "type": "string" },
-          "decision_timestamp":     { "type": "string" },
-          "final_disposition":      { "type": "string" },
-          "disposition_timestamp":  { "type": "string" }
+          "alert_id":               { "type": "string"  },
+          "final_risk_tier":        { "type": "string"  },
+          "original_proposed_tier": { "type": "string"  },
+          "route_taken":            { "type": "string"  },
+          "tier_was_forced":        { "type": "boolean" },
+          "red_flags":              { "type": "array"   },
+          "decision_maker_name":    { "type": "string"  },
+          "human_action":           { "type": "string"  },
+          "override_reason":        { "type": "string"  },
+          "decision_timestamp":     { "type": "string"  },
+          "final_disposition":      { "type": "string"  },
+          "disposition_timestamp":  { "type": "string"  }
         },
         "required": ["alert_id", "human_action", "decision_maker_name", "final_disposition"]
       },
