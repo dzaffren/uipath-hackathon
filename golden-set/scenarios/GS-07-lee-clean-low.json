@@ -1,0 +1,79 @@
+{
+  "scenario_id": "GS-07-lee-clean-low",
+  "demo_beat": "second clean close",
+  "risk_tier": "low",
+  "recommendation": "close",
+  "alert_reference": "ALERT-2026-0107",
+  "alert_date": "2026-02-25",
+  "customer_reference": "CUST-00007",
+  "customer_name": "Lee Siew Ling",
+  "account_reference": "ACC-0007",
+  "aggregate_amount_myr": 5800.00,
+  "notes": "Second clean-close scenario to ensure the 'low' class has multiple representatives in the graded set. Monthly salary deposit from an established employer. No red flags, high confidence expected (>=85). Mirrors GS-01 structure at a slightly higher salary amount.",
+  "evidence_bundle": [
+    {
+      "evidence_id": "ALERT-2026-0107#EV-001",
+      "category": "customer_profile",
+      "summary": "Lee Siew Ling — retail customer, age 38, employed, KYC verified 2024-05. Account open since 2015. Long-standing customer, stable salary credits on record.",
+      "source_ref": "SAML-D:CUST-00007",
+      "payload": {
+        "customer_reference": "CUST-00007",
+        "customer_name": "Lee Siew Ling",
+        "account_reference": "ACC-0007",
+        "kyc_tier": "standard",
+        "kyc_verified_date": "2024-05-14",
+        "occupation": "Senior Software Engineer",
+        "customer_segment": "retail",
+        "account_open_date": "2015-11-20",
+        "risk_rating": "low"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0107#EV-002",
+      "category": "transaction_history",
+      "summary": "Single salary credit of RM5,800.00 on 2026-02-25 from BrightStar Tech Sdn Bhd (CP-EMPLOYER-02). Regular monthly salary — consistent with prior credits from same employer over 3 years.",
+      "source_ref": "SAML-D:TXN-0701",
+      "payload": {
+        "transactions": [
+          {
+            "transaction_id": "TXN-0701",
+            "date": "2026-02-25",
+            "amount_myr": 5800.00,
+            "type": "DEPOSIT",
+            "counterparty_reference": "CP-EMPLOYER-02",
+            "counterparty_name": "BrightStar Tech Sdn Bhd",
+            "channel": "ONLINE",
+            "narrative": "Monthly salary credit Feb 2026"
+          }
+        ],
+        "aggregate_amount_myr": 5800.00,
+        "transaction_count": 1
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0107#EV-003",
+      "category": "screening",
+      "summary": "No sanctions match, no PEP match, no high-risk jurisdiction counterparty, no watchlist match. All screening clear.",
+      "source_ref": "overlay:CUST-00007",
+      "is_no_result": false,
+      "payload": {
+        "sanctions_match": [],
+        "pep_match": [],
+        "high_risk_jurisdiction": [],
+        "watchlist_match": [],
+        "screening_status": "CLEAR"
+      }
+    },
+    {
+      "evidence_id": "ALERT-2026-0107#EV-004",
+      "category": "adverse_media",
+      "summary": "No adverse media found for Lee Siew Ling or BrightStar Tech Sdn Bhd.",
+      "source_ref": "overlay:CUST-00007",
+      "is_no_result": true,
+      "payload": {
+        "adverse_media": [],
+        "search_terms": ["Lee Siew Ling", "CUST-00007", "BrightStar Tech Sdn Bhd"]
+      }
+    }
+  ]
+}

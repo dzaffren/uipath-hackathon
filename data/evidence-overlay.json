@@ -1,0 +1,106 @@
+{
+  "version": "1.0",
+  "description": "Engineered evidence overlay for Aurora Verdict golden-set validation. All entities are synthetic (fictional). No real persons, organisations, or jurisdictions.",
+  "overlays": [
+    {
+      "_scenario": "GS-01 — Mariam Hassan, clean low-risk close",
+      "match": { "customer_reference": "CUST-00001" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [],
+      "adverse_media": []
+    },
+    {
+      "_scenario": "GS-02 — Daniel Okoro, structuring / high-risk escalate",
+      "match": { "customer_reference": "CUST-00002" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [],
+      "adverse_media": []
+    },
+    {
+      "_scenario": "GS-03 — Invented-citation catch (Ahmad Rashid, engineered clean)",
+      "match": { "customer_reference": "CUST-00003" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [],
+      "adverse_media": []
+    },
+    {
+      "_scenario": "GS-04 — Priya Nair, ambiguous medium",
+      "match": { "customer_reference": "CUST-00004" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [],
+      "adverse_media": []
+    },
+    {
+      "_scenario": "GS-05 — Sanctions + PEP red flag (Meridian Trading Ltd)",
+      "match": { "customer_reference": "CUST-00231" },
+      "sanctions_match": [
+        {
+          "entity": "Volkov Holdings",
+          "role": "counterparty",
+          "list": "OFAC SDN (synthetic)"
+        }
+      ],
+      "pep_match": [
+        {
+          "entity": "Hassan Farouk",
+          "role": "beneficial_owner",
+          "position": "Deputy Minister (synthetic)"
+        }
+      ],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [],
+      "adverse_media": [
+        {
+          "headline": "Volkov Holdings named in cross-border financial misconduct probe (synthetic)",
+          "url": "synthetic://news/volkov-holdings-probe-2024",
+          "date": "2024-09-15"
+        }
+      ]
+    },
+    {
+      "_scenario": "GS-06 — High-value jurisdiction case (Global Ventures Pte Ltd)",
+      "match": { "customer_reference": "CUST-00006" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [
+        {
+          "counterparty": "Sable Logistics",
+          "jurisdiction": "Northland (synthetic FATF call-to-action)"
+        }
+      ],
+      "watchlist_match": [],
+      "adverse_media": []
+    },
+    {
+      "_scenario": "GS-07 — Lee Siew Ling, second clean close",
+      "match": { "customer_reference": "CUST-00007" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [],
+      "adverse_media": []
+    },
+    {
+      "_scenario": "GS-08 — Razlan bin Yusof, internal watchlist match (medium)",
+      "match": { "customer_reference": "CUST-00008" },
+      "sanctions_match": [],
+      "pep_match": [],
+      "high_risk_jurisdiction": [],
+      "watchlist_match": [
+        {
+          "entity": "CUST-00008",
+          "list": "Internal watchlist (synthetic)"
+        }
+      ],
+      "adverse_media": []
+    }
+  ]
+}

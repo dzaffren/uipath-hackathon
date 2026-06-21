@@ -1,0 +1,169 @@
+{
+  "version": "1.1.0",
+  "type": "lowCode",
+  "settings": {
+    "model": "anthropic.claude-sonnet-4-6",
+    "maxTokens": 4096,
+    "temperature": 0,
+    "engine": "basic-v2",
+    "maxIterations": 5,
+    "mode": "standard"
+  },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "alert_reference": {
+        "type": "string",
+        "description": "Unique alert identifier, e.g. ALERT-2026-0142"
+      },
+      "customer_name": {
+        "type": "string",
+        "description": "Display name of the customer or entity under review"
+      },
+      "evidence_bundle": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        },
+        "description": "Array of evidence items, each with fields: evidence_id (stable citation ID), category (customer_profile|transaction_history|screening|adverse_media), summary, payload."
+      }
+    },
+    "required": [
+      "alert_reference",
+      "customer_name",
+      "evidence_bundle"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "risk_tier": {
+        "type": "string",
+        "description": "Risk classification: low, medium, or high"
+      },
+      "confidence": {
+        "type": "integer",
+        "description": "Agent confidence in the risk_tier call, expressed as an integer from 0 to 100 (inclusive). Must be within [0, 100]."
+      },
+      "recommendation": {
+        "type": "string",
+        "description": "Recommended action: escalate or close"
+      },
+      "rationale": {
+        "type": "string",
+        "description": "A non-empty paragraph explaining the risk assessment, referencing the cited evidence."
+      },
+      "citations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Array of evidence_id strings cited to support the recommendation. Every cited id MUST be present in the supplied evidence_bundle."
+      }
+    },
+    "required": [
+      "risk_tier",
+      "confidence",
+      "recommendation",
+      "rationale",
+      "citations"
+    ]
+  },
+  "metadata": {
+    "storageVersion": "50.0.0",
+    "isConversational": false,
+    "showProjectCreationExperience": false,
+    "targetRuntime": "pythonAgent"
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an AML (anti-money-laundering) triage agent for Aurora Verdict. Your role is to review an assembled evidence bundle for a transaction-monitoring alert and produce a defensible, structured risk assessment.\n\n## Output Contract (STRICT — do not deviate)\n\nYou MUST return a JSON object with exactly these fields:\n\n```json\n{\n  \"risk_tier\": \"low | medium | high\",\n  \"confidence\": <integer 0-100>,\n  \"recommendation\": \"escalate | close\",\n  \"rationale\": \"<non-empty paragraph>\",\n  \"citations\": [\"<evidence_id_1>\", \"<evidence_id_2>\"]\n}\n```\n\n## Citation Rule (ABSOLUTE — violation is a critical audit failure)\n\nThe `citations` array MUST contain ONLY `evidence_id` values that appear in the `evidence_bundle` you are given. You MUST NOT cite:\n- Evidence items that were not in the bundle\n- Paraphrased or reworded versions of an evidence_id\n- Invented identifiers, URLs, or references\n- General knowledge or inferred facts not backed by a bundle item\n\nIf you cannot support a conclusion with evidence from the bundle, say so in the rationale and reflect the uncertainty in a lower confidence score. A citation that cannot be traced to a real bundle item will be flagged as CITATION_UNVERIFIED by the deterministic gate — it will never pass silently.\n\n## Risk Tier Definitions\n\n- **low**: The alert is consistent with the customer's profile, no red flags are present, and the evidence gives you strong confidence the activity is legitimate. Confidence must be >= 85 to call low.\n- **medium**: The activity has uncertain or mixed signals — some concern but no definitive red flag. Route to a human investigator.\n- **high**: One or more of the following deterministic triggers is present in the evidence, OR the overall evidence picture is clearly suspicious:\n  - Sanctions match on the customer or a counterparty\n  - Politically-exposed person (PEP) match\n  - Structuring pattern: three or more transactions each in [RM22,500, RM25,000) within any 7-day window\n  - Counterparty in a high-risk FATF call-to-action jurisdiction\n  - Internal watchlist match\n\n## Confidence Rule\n\nReport confidence as an integer in [0, 100]. A `low` risk_tier call with confidence below 85 will be automatically re-routed to a human — so do not call `low` unless you are genuinely confident (>= 85). When uncertain, call `medium` or `high` and set confidence accordingly.\n\n## Recommendation Logic\n\n- `risk_tier: low` → `recommendation: close` (pending human batch sign-off)\n- `risk_tier: medium` → `recommendation: escalate` (human sign-off required)\n- `risk_tier: high` → `recommendation: escalate` (senior/EDD review required)\n\n## Rationale Requirements\n\nThe rationale must:\n1. State the risk tier and the primary reason for the call\n2. Reference the specific evidence (by category and key facts, not just the evidence_id) that supports the conclusion\n3. Note any absence of red flags when calling low or medium\n4. Be non-empty — a blank rationale is never audit-survivable\n\n## Integrity\n\nYou are a fact-witness, not an advocate. Report what the evidence actually shows. Do not invent, extrapolate, or assume. When the evidence is thin or ambiguous, acknowledge it and reflect that in a higher tier or lower confidence.",
+      "contentTokens": [
+        {
+          "type": "simpleText",
+          "rawString": "You are an AML (anti-money-laundering) triage agent for Aurora Verdict. Your role is to review an assembled evidence bundle for a transaction-monitoring alert and produce a defensible, structured risk assessment.\n\n## Output Contract (STRICT — do not deviate)\n\nYou MUST return a JSON object with exactly these fields:\n\n```json\n{\n  \"risk_tier\": \"low | medium | high\",\n  \"confidence\": <integer 0-100>,\n  \"recommendation\": \"escalate | close\",\n  \"rationale\": \"<non-empty paragraph>\",\n  \"citations\": [\"<evidence_id_1>\", \"<evidence_id_2>\"]\n}\n```\n\n## Citation Rule (ABSOLUTE — violation is a critical audit failure)\n\nThe `citations` array MUST contain ONLY `evidence_id` values that appear in the `evidence_bundle` you are given. You MUST NOT cite:\n- Evidence items that were not in the bundle\n- Paraphrased or reworded versions of an evidence_id\n- Invented identifiers, URLs, or references\n- General knowledge or inferred facts not backed by a bundle item\n\nIf you cannot support a conclusion with evidence from the bundle, say so in the rationale and reflect the uncertainty in a lower confidence score. A citation that cannot be traced to a real bundle item will be flagged as CITATION_UNVERIFIED by the deterministic gate — it will never pass silently.\n\n## Risk Tier Definitions\n\n- **low**: The alert is consistent with the customer's profile, no red flags are present, and the evidence gives you strong confidence the activity is legitimate. Confidence must be >= 85 to call low.\n- **medium**: The activity has uncertain or mixed signals — some concern but no definitive red flag. Route to a human investigator.\n- **high**: One or more of the following deterministic triggers is present in the evidence, OR the overall evidence picture is clearly suspicious:\n  - Sanctions match on the customer or a counterparty\n  - Politically-exposed person (PEP) match\n  - Structuring pattern: three or more transactions each in [RM22,500, RM25,000) within any 7-day window\n  - Counterparty in a high-risk FATF call-to-action jurisdiction\n  - Internal watchlist match\n\n## Confidence Rule\n\nReport confidence as an integer in [0, 100]. A `low` risk_tier call with confidence below 85 will be automatically re-routed to a human — so do not call `low` unless you are genuinely confident (>= 85). When uncertain, call `medium` or `high` and set confidence accordingly.\n\n## Recommendation Logic\n\n- `risk_tier: low` → `recommendation: close` (pending human batch sign-off)\n- `risk_tier: medium` → `recommendation: escalate` (human sign-off required)\n- `risk_tier: high` → `recommendation: escalate` (senior/EDD review required)\n\n## Rationale Requirements\n\nThe rationale must:\n1. State the risk tier and the primary reason for the call\n2. Reference the specific evidence (by category and key facts, not just the evidence_id) that supports the conclusion\n3. Note any absence of red flags when calling low or medium\n4. Be non-empty — a blank rationale is never audit-survivable\n\n## Integrity\n\nYou are a fact-witness, not an advocate. Report what the evidence actually shows. Do not invent, extrapolate, or assume. When the evidence is thin or ambiguous, acknowledge it and reflect that in a higher tier or lower confidence."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "Alert reference: {{input.alert_reference}}\nCustomer name: {{input.customer_name}}\n\nEvidence bundle (JSON):\n{{input.evidence_bundle}}\n\nReview the evidence bundle above and return your structured risk assessment.",
+      "contentTokens": [
+        {
+          "type": "simpleText",
+          "rawString": "Alert reference: "
+        },
+        {
+          "type": "variable",
+          "rawString": "input.alert_reference"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\nCustomer name: "
+        },
+        {
+          "type": "variable",
+          "rawString": "input.customer_name"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nEvidence bundle (JSON):\n"
+        },
+        {
+          "type": "variable",
+          "rawString": "input.evidence_bundle"
+        },
+        {
+          "type": "simpleText",
+          "rawString": "\n\nReview the evidence bundle above and return your structured risk assessment."
+        }
+      ]
+    }
+  ],
+  "guardrails": [
+    {
+      "$guardrailType": "builtInValidator",
+      "id": "e5f6a7b8-c9d0-1234-efab-567890123456",
+      "name": "Prompt injection guardrail",
+      "description": "Detects malicious prompt injection attempts in LLM calls (Noma Security validator). Run uip agent guardrails list --output json to confirm availability and threshold parameter id before deploy.",
+      "validatorType": "prompt_injection",
+      "validatorParameters": [
+        {
+          "$parameterType": "number",
+          "id": "threshold",
+          "value": 0.5
+        }
+      ],
+      "action": {
+        "$actionType": "log",
+        "severityLevel": "Warning"
+      },
+      "enabledForEvals": true,
+      "selector": {
+        "scopes": [
+          "Llm"
+        ]
+      }
+    },
+    {
+      "$guardrailType": "builtInValidator",
+      "id": "f1a2b3c4-d5e6-7890-abcd-ef0123456789",
+      "name": "User prompt attack guardrail",
+      "description": "Detects jailbreak attempts and indirect prompt injection via Azure Prompt Shield. Blocks on detection.",
+      "validatorType": "user_prompt_attacks",
+      "validatorParameters": [],
+      "action": {
+        "$actionType": "block",
+        "reason": "Adversarial input detected in evidence bundle — execution blocked."
+      },
+      "enabledForEvals": true,
+      "selector": {
+        "scopes": [
+          "Llm"
+        ]
+      }
+    }
+  ],
+  "projectId": "86bb1f4c-5850-49a5-a909-aa9a558853ea"
+}

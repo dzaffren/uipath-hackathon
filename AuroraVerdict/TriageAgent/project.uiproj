@@ -1,0 +1,5 @@
+{
+  "ProjectType": "Agent",
+  "Name": "TriageAgent",
+  "Description": "Aurora Verdict triage agent — produces a defensible risk assessment (tier, confidence, recommendation, rationale, citations) for each AML alert. Part of the AuroraVerdict solution."
+}
