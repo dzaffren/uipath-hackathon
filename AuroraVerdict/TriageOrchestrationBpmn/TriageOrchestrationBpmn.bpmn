@@ -47,8 +47,6 @@
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- TASK 1: EvidenceGather API Workflow                          -->
-    <!--   Orchestrator.ExecuteApiWorkflowAsync → uipath:activity    -->
-    <!--   (context, inputs, outputs ALL inside uipath:activity)     -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:serviceTask id="Task_EvidenceGather" name="Gather Evidence">
       <bpmn:extensionElements>
@@ -68,7 +66,6 @@
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- TASK 2: Triage Agent                                         -->
-    <!--   Orchestrator.StartAgentJob → uipath:activity              -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:serviceTask id="Task_TriageAgent" name="Run Triage Agent">
       <bpmn:extensionElements>
@@ -89,7 +86,7 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- TASK 3: DecisionGate API Workflow                            -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <bpmn:serviceTask id="Task_DecisionGate" name="Validate Citations">
+    <bpmn:serviceTask id="Task_DecisionGate" name="Run Decision Gate">
       <bpmn:extensionElements>
         <uipath:activity version="v1">
           <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
@@ -102,20 +99,42 @@
         </uipath:activity>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Agent_To_Gate</bpmn:incoming>
-      <bpmn:outgoing>Flow_Gate_To_Router</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gate_To_ExtractRoute</bpmn:outgoing>
     </bpmn:serviceTask>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- TASK 3a: Extract Route from gate result into Var_Route       -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:scriptTask id="Task_ExtractRoute" name="Extract Route" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "gateResult": "=vars.Var_GateResult"
+}]]></uipath:input>
+          <uipath:output name="route" type="string" var="Var_Route" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Gate_To_ExtractRoute</bpmn:incoming>
+      <bpmn:outgoing>Flow_ExtractRoute_To_Router</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var route = (gateResult && gateResult.route) ? gateResult.route : 'medium_signoff';
+return route;
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- GATEWAY: Route on Var_Route                                  -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:exclusiveGateway id="Gateway_Route" name="Route?">
-      <bpmn:incoming>Flow_Gate_To_Router</bpmn:incoming>
+      <bpmn:incoming>Flow_ExtractRoute_To_Router</bpmn:incoming>
       <bpmn:outgoing>Flow_Router_To_HITL</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Router_To_HighChallenger</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Router_To_LowBatch</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- TASK 4: Human-in-the-Loop Sign / Override                   -->
-    <!--   Actions.HITL → uipath:activity                            -->
+    <!-- TASK 4: Human-in-the-Loop Sign / Override (medium_signoff)   -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:userTask id="Task_HITL" name="Sign or Override">
       <bpmn:extensionElements>
@@ -126,6 +145,7 @@
   "fields": [
     {"id": "recommendation", "label": "Recommendation", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.final_risk_tier"},
     {"id": "riskTier", "label": "Risk Tier", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.final_risk_tier"},
+    {"id": "tierWasForced", "label": "Tier Override Applied", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.tier_was_forced"},
     {"id": "confidence", "label": "Agent Confidence (%)", "type": "number", "direction": "input", "value": "=vars.Var_AgentResult.confidence"},
     {"id": "rationale", "label": "Rationale", "type": "text", "direction": "input", "value": "=vars.Var_AgentResult.rationale"},
     {"id": "citationCheck", "label": "Citation Check", "type": "text", "direction": "input", "value": "=vars.Var_GateResult.validated_citations"},
@@ -146,7 +166,6 @@
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- TASK 5: Build AuditWrite payload (ScriptTask)                -->
-    <!--   BPMN.ScriptTask → uipath:mapping (EXCEPTION to the rule)  -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:scriptTask id="Task_BuildAudit" name="Build Audit Payload" scriptFormat="JavaScript">
       <bpmn:extensionElements>
@@ -166,7 +185,10 @@
       <bpmn:script><![CDATA[
 var alertId = (evidenceResult && evidenceResult.alert_id) ? evidenceResult.alert_id : '';
 var finalRiskTier = (gateResult && gateResult.final_risk_tier) ? gateResult.final_risk_tier : 'medium';
-var originalTier = (agentResult && agentResult.risk_tier) ? agentResult.risk_tier : 'medium';
+var originalTier = (gateResult && gateResult.original_proposed_tier) ? gateResult.original_proposed_tier : ((agentResult && agentResult.risk_tier) ? agentResult.risk_tier : 'medium');
+var routeTaken = (gateResult && gateResult.route) ? gateResult.route : 'medium_signoff';
+var tierWasForced = (gateResult && gateResult.tier_was_forced) ? gateResult.tier_was_forced : false;
+var redFlags = (gateResult && Array.isArray(gateResult.red_flags)) ? gateResult.red_flags : [];
 var outcomeId = (hitlResult && hitlResult.outcomeId) ? hitlResult.outcomeId : 'sign';
 var humanAction = (outcomeId === 'sign') ? 'signed_agree' : 'override';
 var overrideReason = '';
@@ -180,7 +202,9 @@ return {
   alert_id: alertId,
   final_risk_tier: finalRiskTier,
   original_proposed_tier: originalTier,
-  route_taken: 'medium_signoff',
+  route_taken: routeTaken,
+  tier_was_forced: tierWasForced,
+  red_flags: redFlags,
   decision_maker_name: decisionMakerName,
   human_action: humanAction,
   override_reason: overrideReason,
@@ -202,7 +226,7 @@ return {
             <uipath:input name="Name" type="string" value="=bindings.Binding_AuditWrite_Name" />
             <uipath:input name="FolderPath" type="string" value="=bindings.Binding_AuditWrite_Folder" />
           </uipath:context>
-          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_id":"=vars.Var_AuditInput.alert_id","final_risk_tier":"=vars.Var_AuditInput.final_risk_tier","original_proposed_tier":"=vars.Var_AuditInput.original_proposed_tier","route_taken":"=vars.Var_AuditInput.route_taken","decision_maker_name":"=vars.Var_AuditInput.decision_maker_name","human_action":"=vars.Var_AuditInput.human_action","override_reason":"=vars.Var_AuditInput.override_reason","decision_timestamp":"=vars.Var_AuditInput.decision_timestamp","final_disposition":"=vars.Var_AuditInput.final_disposition","disposition_timestamp":"=vars.Var_AuditInput.disposition_timestamp"}]]></uipath:input>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"alert_id":"=vars.Var_AuditInput.alert_id","final_risk_tier":"=vars.Var_AuditInput.final_risk_tier","original_proposed_tier":"=vars.Var_AuditInput.original_proposed_tier","route_taken":"=vars.Var_AuditInput.route_taken","tier_was_forced":"=vars.Var_AuditInput.tier_was_forced","red_flags":"=vars.Var_AuditInput.red_flags","decision_maker_name":"=vars.Var_AuditInput.decision_maker_name","human_action":"=vars.Var_AuditInput.human_action","override_reason":"=vars.Var_AuditInput.override_reason","decision_timestamp":"=vars.Var_AuditInput.decision_timestamp","final_disposition":"=vars.Var_AuditInput.final_disposition","disposition_timestamp":"=vars.Var_AuditInput.disposition_timestamp"}]]></uipath:input>
           <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_AuditResult" />
         </uipath:activity>
       </bpmn:extensionElements>
@@ -211,10 +235,24 @@ return {
     </bpmn:serviceTask>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- END                                                          -->
+    <!-- END (normal flow)                                            -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <bpmn:endEvent id="End_Done" name="Triage complete">
       <bpmn:incoming>Flow_AuditWrite_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- END (high_challenger stub — challenger story owns the route) -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:endEvent id="End_HighChallenger" name="High-risk route (challenger story)">
+      <bpmn:incoming>Flow_Router_To_HighChallenger</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- END (low_batch stub — batch-disposition story owns the route) -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <bpmn:endEvent id="End_LowBatch" name="Low-risk auto-batch (batch story)">
+      <bpmn:incoming>Flow_Router_To_LowBatch</bpmn:incoming>
     </bpmn:endEvent>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -223,9 +261,16 @@ return {
     <bpmn:sequenceFlow id="Flow_Start_To_Evidence" sourceRef="Start_Triage" targetRef="Task_EvidenceGather" />
     <bpmn:sequenceFlow id="Flow_Evidence_To_Agent" sourceRef="Task_EvidenceGather" targetRef="Task_TriageAgent" />
     <bpmn:sequenceFlow id="Flow_Agent_To_Gate" sourceRef="Task_TriageAgent" targetRef="Task_DecisionGate" />
-    <bpmn:sequenceFlow id="Flow_Gate_To_Router" sourceRef="Task_DecisionGate" targetRef="Gateway_Route" />
+    <bpmn:sequenceFlow id="Flow_Gate_To_ExtractRoute" sourceRef="Task_DecisionGate" targetRef="Task_ExtractRoute" />
+    <bpmn:sequenceFlow id="Flow_ExtractRoute_To_Router" sourceRef="Task_ExtractRoute" targetRef="Gateway_Route" />
     <bpmn:sequenceFlow id="Flow_Router_To_HITL" sourceRef="Gateway_Route" targetRef="Task_HITL">
       <bpmn:conditionExpression>=vars.Var_Route == "medium_signoff"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Router_To_HighChallenger" sourceRef="Gateway_Route" targetRef="End_HighChallenger">
+      <bpmn:conditionExpression>=vars.Var_Route == "high_challenger"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Router_To_LowBatch" sourceRef="Gateway_Route" targetRef="End_LowBatch">
+      <bpmn:conditionExpression>=vars.Var_Route == "low_batch"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_HITL_To_BuildAudit" sourceRef="Task_HITL" targetRef="Task_BuildAudit" />
     <bpmn:sequenceFlow id="Flow_BuildAudit_To_AuditWrite" sourceRef="Task_BuildAudit" targetRef="Task_AuditWrite" />
@@ -258,29 +303,47 @@ return {
         <dc:Bounds x="530" y="120" width="120" height="80" />
       </bpmndi:BPMNShape>
 
+      <bpmndi:BPMNShape id="S_Task_ExtractRoute" bpmnElement="Task_ExtractRoute">
+        <dc:Bounds x="710" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
       <bpmndi:BPMNShape id="S_Gateway_Route" bpmnElement="Gateway_Route" isMarkerVisible="true">
-        <dc:Bounds x="715" y="135" width="50" height="50" />
+        <dc:Bounds x="895" y="135" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="718" y="192" width="44" height="14" />
+          <dc:Bounds x="898" y="192" width="44" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="S_Task_HITL" bpmnElement="Task_HITL">
-        <dc:Bounds x="830" y="120" width="120" height="80" />
-      </bpmndi:BPMNShape>
-
-      <bpmndi:BPMNShape id="S_Task_BuildAudit" bpmnElement="Task_BuildAudit">
         <dc:Bounds x="1010" y="120" width="120" height="80" />
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="S_Task_AuditWrite" bpmnElement="Task_AuditWrite">
+      <bpmndi:BPMNShape id="S_Task_BuildAudit" bpmnElement="Task_BuildAudit">
         <dc:Bounds x="1190" y="120" width="120" height="80" />
       </bpmndi:BPMNShape>
 
+      <bpmndi:BPMNShape id="S_Task_AuditWrite" bpmnElement="Task_AuditWrite">
+        <dc:Bounds x="1370" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
       <bpmndi:BPMNShape id="S_End_Done" bpmnElement="End_Done">
-        <dc:Bounds x="1372" y="142" width="36" height="36" />
+        <dc:Bounds x="1552" y="142" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1350" y="185" width="80" height="14" />
+          <dc:Bounds x="1530" y="185" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_End_HighChallenger" bpmnElement="End_HighChallenger">
+        <dc:Bounds x="897" y="280" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="860" y="323" width="110" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_End_LowBatch" bpmnElement="End_LowBatch">
+        <dc:Bounds x="1010" y="280" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="973" y="323" width="110" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
@@ -299,29 +362,45 @@ return {
         <di:waypoint x="530" y="160" />
       </bpmndi:BPMNEdge>
 
-      <bpmndi:BPMNEdge id="E_Flow_Gate_To_Router" bpmnElement="Flow_Gate_To_Router">
+      <bpmndi:BPMNEdge id="E_Flow_Gate_To_ExtractRoute" bpmnElement="Flow_Gate_To_ExtractRoute">
         <di:waypoint x="650" y="160" />
-        <di:waypoint x="715" y="160" />
+        <di:waypoint x="710" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ExtractRoute_To_Router" bpmnElement="Flow_ExtractRoute_To_Router">
+        <di:waypoint x="830" y="160" />
+        <di:waypoint x="895" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Router_To_HITL" bpmnElement="Flow_Router_To_HITL">
-        <di:waypoint x="765" y="160" />
-        <di:waypoint x="830" y="160" />
-      </bpmndi:BPMNEdge>
-
-      <bpmndi:BPMNEdge id="E_Flow_HITL_To_BuildAudit" bpmnElement="Flow_HITL_To_BuildAudit">
-        <di:waypoint x="950" y="160" />
+        <di:waypoint x="945" y="160" />
         <di:waypoint x="1010" y="160" />
       </bpmndi:BPMNEdge>
 
-      <bpmndi:BPMNEdge id="E_Flow_BuildAudit_To_AuditWrite" bpmnElement="Flow_BuildAudit_To_AuditWrite">
+      <bpmndi:BPMNEdge id="E_Flow_Router_To_HighChallenger" bpmnElement="Flow_Router_To_HighChallenger">
+        <di:waypoint x="920" y="185" />
+        <di:waypoint x="920" y="280" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Router_To_LowBatch" bpmnElement="Flow_Router_To_LowBatch">
+        <di:waypoint x="945" y="160" />
+        <di:waypoint x="1028" y="160" />
+        <di:waypoint x="1028" y="280" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_HITL_To_BuildAudit" bpmnElement="Flow_HITL_To_BuildAudit">
         <di:waypoint x="1130" y="160" />
         <di:waypoint x="1190" y="160" />
       </bpmndi:BPMNEdge>
 
-      <bpmndi:BPMNEdge id="E_Flow_AuditWrite_To_End" bpmnElement="Flow_AuditWrite_To_End">
+      <bpmndi:BPMNEdge id="E_Flow_BuildAudit_To_AuditWrite" bpmnElement="Flow_BuildAudit_To_AuditWrite">
         <di:waypoint x="1310" y="160" />
-        <di:waypoint x="1372" y="160" />
+        <di:waypoint x="1370" y="160" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_AuditWrite_To_End" bpmnElement="Flow_AuditWrite_To_End">
+        <di:waypoint x="1490" y="160" />
+        <di:waypoint x="1552" y="160" />
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>
