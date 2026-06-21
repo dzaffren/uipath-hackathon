@@ -1,0 +1,30 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "$id": "entry-points.json",
+  "entryPoints": [
+    {
+      "filePath": "/content/DecisionGate.json",
+      "uniqueId": "b2c3d4e5-f6a7-4901-bcde-f12345678901",
+      "type": "api",
+      "input": {
+        "type": "object",
+        "properties": {
+          "alert_id":        { "type": "string" },
+          "evidence_bundle": { "type": "array"  },
+          "agent_output":    { "type": "object" }
+        },
+        "required": ["alert_id", "evidence_bundle", "agent_output"]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "validated_citations": { "type": "array"   },
+          "has_unverified":      { "type": "boolean" },
+          "final_risk_tier":     { "type": "string"  },
+          "route":               { "type": "string"  }
+        }
+      },
+      "displayName": "Run"
+    }
+  ]
+}

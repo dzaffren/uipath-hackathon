@@ -1,0 +1,5 @@
+{
+  "ProjectType": "Api",
+  "Name": "EvidenceGatherApi",
+  "Description": "Aurora Verdict evidence-gather API workflow — fetches and persists the evidence bundle for an AML alert into Data Fabric. Part of the AuroraVerdict solution."
+}

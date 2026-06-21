@@ -1,0 +1,5 @@
+{
+  "ProjectType": "Api",
+  "Name": "AuditWriteApi",
+  "Description": "Aurora Verdict audit-write API workflow — idempotent insert of DecisionRecord into Data Fabric for the signed or overridden HITL outcome. Part of the AuroraVerdict solution."
+}

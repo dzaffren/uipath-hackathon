@@ -1,0 +1,5 @@
+{
+  "ProjectType": "Api",
+  "Name": "DecisionGateApi",
+  "Description": "Aurora Verdict deterministic citation gate — validates agent citations against evidence bundle and inserts CitationCheck + AgentAssessment rows into Data Fabric. Part of the AuroraVerdict solution."
+}
