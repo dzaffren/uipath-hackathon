@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-02-okoro-structuring-high",
+  "job_id": 67662355,
+  "state": "Successful",
+  "risk_tier": "high",
+  "confidence": 92,
+  "recommendation": "escalate",
+  "rationale": "This alert is classified as HIGH risk due to a confirmed structuring pattern that meets the deterministic trigger threshold. As documented in the transaction history (EV-002), Daniel Okoro made three cash deposits — RM24,800 on 2026-02-01, RM24,200 on 2026-02-03, and RM24,500 on 2026-02-05 — all within a 5-day window. Every individual amount falls squarely within the [RM22,500, RM25,000) structuring detection band, each deliberately below the RM25,000 Currency Transaction Reporting (CTR) threshold. The aggregate across the three transactions is RM73,500. This satisfies the deterministic structuring trigger: three or more transactions each in [RM22,500, RM25,000) within any 7-day window. The pattern is strongly indicative of deliberate threshold avoidance. While screening results are entirely clear — no sanctions match, no PEP match, no high-risk jurisdiction counterparty, and no internal watchlist match (EV-003) — and no adverse media was identified (EV-004), the absence of screening red flags does not mitigate the structuring concern, which is behavioural in nature. The customer profile (EV-001) shows a self-employed retail trader with a medium risk rating and no prior suspicious activity reports, which provides limited explanatory context for three rapid, near-identical sub-threshold cash deposits. This case requires escalation for senior/EDD review to determine whether a legitimate business rationale exists for this deposit pattern.",
+  "citations": [
+    "ALERT-2026-0102#EV-001",
+    "ALERT-2026-0102#EV-002",
+    "ALERT-2026-0102#EV-003",
+    "ALERT-2026-0102#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "high",
+    "Confidence": 92,
+    "Recommendation": "escalate",
+    "Rationale": "This alert is classified as HIGH risk due to a confirmed structuring pattern that meets the deterministic trigger threshold. As documented in the transaction history (EV-002), Daniel Okoro made three cash deposits — RM24,800 on 2026-02-01, RM24,200 on 2026-02-03, and RM24,500 on 2026-02-05 — all within a 5-day window. Every individual amount falls squarely within the [RM22,500, RM25,000) structuring detection band, each deliberately below the RM25,000 Currency Transaction Reporting (CTR) threshold. The aggregate across the three transactions is RM73,500. This satisfies the deterministic structuring trigger: three or more transactions each in [RM22,500, RM25,000) within any 7-day window. The pattern is strongly indicative of deliberate threshold avoidance. While screening results are entirely clear — no sanctions match, no PEP match, no high-risk jurisdiction counterparty, and no internal watchlist match (EV-003) — and no adverse media was identified (EV-004), the absence of screening red flags does not mitigate the structuring concern, which is behavioural in nature. The customer profile (EV-001) shows a self-employed retail trader with a medium risk rating and no prior suspicious activity reports, which provides limited explanatory context for three rapid, near-identical sub-threshold cash deposits. This case requires escalation for senior/EDD review to determine whether a legitimate business rationale exists for this deposit pattern.",
+    "Citations": [
+      "ALERT-2026-0102#EV-001",
+      "ALERT-2026-0102#EV-002",
+      "ALERT-2026-0102#EV-003",
+      "ALERT-2026-0102#EV-004"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-01-mariam-clean-low",
+  "job_id": 67662343,
+  "state": "Successful",
+  "risk_tier": "low",
+  "confidence": 96,
+  "recommendation": "close",
+  "rationale": "Risk tier is assessed as LOW. The evidence bundle presents a clean, consistent picture with no red flags across any category. The customer profile (EV-001) shows Mariam Hassan is a KYC-verified (standard tier, verified 2024-03), low-risk retail customer employed as an Administrative Executive, with an account in good standing since 2021. The single triggering transaction (EV-002) is a RM3,500.00 salary credit from Meridian Corp (CP-EMPLOYER-01) on 2026-01-15, explicitly narrated as \"Monthly salary credit Jan 2026\" — this is entirely consistent with her stated occupation and low-risk profile, and there is no unusual volume or structuring pattern. Screening results (EV-003) are fully clear: no sanctions match, no PEP match, no high-risk FATF jurisdiction counterparty, and no internal watchlist match — none of the deterministic high-risk triggers are present. Adverse media screening (EV-004) returned no results for the customer, her customer reference, or her account reference. In aggregate, the activity is fully explained by normal salary receipt, all screening is clear, and the customer's profile is consistent with the observed transaction. No escalation indicators are present. Recommendation: close (pending batch sign-off).",
+  "citations": [
+    "ALERT-2026-0101#EV-001",
+    "ALERT-2026-0101#EV-002",
+    "ALERT-2026-0101#EV-003",
+    "ALERT-2026-0101#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "low",
+    "Confidence": 96,
+    "Recommendation": "close",
+    "Rationale": "Risk tier is assessed as LOW. The evidence bundle presents a clean, consistent picture with no red flags across any category. The customer profile (EV-001) shows Mariam Hassan is a KYC-verified (standard tier, verified 2024-03), low-risk retail customer employed as an Administrative Executive, with an account in good standing since 2021. The single triggering transaction (EV-002) is a RM3,500.00 salary credit from Meridian Corp (CP-EMPLOYER-01) on 2026-01-15, explicitly narrated as \"Monthly salary credit Jan 2026\" — this is entirely consistent with her stated occupation and low-risk profile, and there is no unusual volume or structuring pattern. Screening results (EV-003) are fully clear: no sanctions match, no PEP match, no high-risk FATF jurisdiction counterparty, and no internal watchlist match — none of the deterministic high-risk triggers are present. Adverse media screening (EV-004) returned no results for the customer, her customer reference, or her account reference. In aggregate, the activity is fully explained by normal salary receipt, all screening is clear, and the customer's profile is consistent with the observed transaction. No escalation indicators are present. Recommendation: close (pending batch sign-off).",
+    "Citations": [
+      "ALERT-2026-0101#EV-001",
+      "ALERT-2026-0101#EV-002",
+      "ALERT-2026-0101#EV-003",
+      "ALERT-2026-0101#EV-004"
+    ]
+  }
+}

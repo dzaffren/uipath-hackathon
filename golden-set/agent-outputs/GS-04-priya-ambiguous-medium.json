@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-04-priya-ambiguous-medium",
+  "job_id": 67662422,
+  "state": "Successful",
+  "risk_tier": "medium",
+  "confidence": 68,
+  "recommendation": "escalate",
+  "rationale": "This alert is assessed as **medium risk**, requiring escalation for human review. No deterministic high-risk triggers are present — screening (EV-003) returned fully clear results with no sanctions match, PEP match, high-risk jurisdiction counterparty, or watchlist match, and no adverse media was found for either Priya Nair or the counterparty Apex Trading Ltd (EV-004). However, several contextual risk factors combine to create meaningful uncertainty that prevents a low-risk close. First, the customer profile (EV-001) shows a newly opened account (less than 6 months old as of the alert date), a vague occupation description (\"freelance consultant\"), and a noted absence of income source documentation — with CDD notes flagging a pending enhanced review. A limited transaction baseline has been established, making it difficult to assess whether this activity is consistent with expected behaviour. Second, the transaction itself (EV-002) is a single RM15,000 outbound transfer to Apex Trading Ltd — a first-time, previously unknown counterparty — and represents the largest single outgoing transfer since account opening, significantly exceeding the prior pattern of sub-RM5,000 outbound transfers. The narrative (\"Business transfer to new supplier\") is generic and unverified. While the amount does not trigger the structuring threshold and no structuring pattern is evident, the combination of a new account, vague occupation, pending income documentation, and a materially large first-time transfer to an unknown counterparty warrants human investigator review to verify the business relationship and source of funds before any closure decision is made.",
+  "citations": [
+    "ALERT-2026-0104#EV-001",
+    "ALERT-2026-0104#EV-002",
+    "ALERT-2026-0104#EV-003",
+    "ALERT-2026-0104#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "medium",
+    "Confidence": 68,
+    "Recommendation": "escalate",
+    "Rationale": "This alert is assessed as **medium risk**, requiring escalation for human review. No deterministic high-risk triggers are present — screening (EV-003) returned fully clear results with no sanctions match, PEP match, high-risk jurisdiction counterparty, or watchlist match, and no adverse media was found for either Priya Nair or the counterparty Apex Trading Ltd (EV-004). However, several contextual risk factors combine to create meaningful uncertainty that prevents a low-risk close. First, the customer profile (EV-001) shows a newly opened account (less than 6 months old as of the alert date), a vague occupation description (\"freelance consultant\"), and a noted absence of income source documentation — with CDD notes flagging a pending enhanced review. A limited transaction baseline has been established, making it difficult to assess whether this activity is consistent with expected behaviour. Second, the transaction itself (EV-002) is a single RM15,000 outbound transfer to Apex Trading Ltd — a first-time, previously unknown counterparty — and represents the largest single outgoing transfer since account opening, significantly exceeding the prior pattern of sub-RM5,000 outbound transfers. The narrative (\"Business transfer to new supplier\") is generic and unverified. While the amount does not trigger the structuring threshold and no structuring pattern is evident, the combination of a new account, vague occupation, pending income documentation, and a materially large first-time transfer to an unknown counterparty warrants human investigator review to verify the business relationship and source of funds before any closure decision is made.",
+    "Citations": [
+      "ALERT-2026-0104#EV-001",
+      "ALERT-2026-0104#EV-002",
+      "ALERT-2026-0104#EV-003",
+      "ALERT-2026-0104#EV-004"
+    ]
+  }
+}

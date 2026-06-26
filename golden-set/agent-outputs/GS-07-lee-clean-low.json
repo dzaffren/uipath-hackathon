@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-07-lee-clean-low",
+  "job_id": 67662454,
+  "state": "Successful",
+  "risk_tier": "low",
+  "confidence": 95,
+  "recommendation": "close",
+  "rationale": "Risk tier is assessed as LOW. The sole triggering transaction is a single salary credit of RM5,800.00 on 2026-02-25 from BrightStar Tech Sdn Bhd (EV-002), which is fully consistent with the customer's profile as a Senior Software Engineer with a long-standing account open since 2015 and documented salary credits from the same employer over three years (EV-001). No deterministic high-risk triggers are present: screening returned a clean result with no sanctions match, no PEP match, no high-risk FATF jurisdiction counterparty, and no internal watchlist match (EV-003). No adverse media was identified for either the customer or the counterparty employer (EV-004). There is no structuring pattern — only one transaction is present, well below the RM22,500 threshold. The customer holds a standard KYC tier verified in May 2024 and carries a low risk rating. The overall evidence picture is entirely consistent with legitimate, routine payroll activity, and no red flags of any kind are present.",
+  "citations": [
+    "ALERT-2026-0107#EV-001",
+    "ALERT-2026-0107#EV-002",
+    "ALERT-2026-0107#EV-003",
+    "ALERT-2026-0107#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "low",
+    "Confidence": 95,
+    "Recommendation": "close",
+    "Rationale": "Risk tier is assessed as LOW. The sole triggering transaction is a single salary credit of RM5,800.00 on 2026-02-25 from BrightStar Tech Sdn Bhd (EV-002), which is fully consistent with the customer's profile as a Senior Software Engineer with a long-standing account open since 2015 and documented salary credits from the same employer over three years (EV-001). No deterministic high-risk triggers are present: screening returned a clean result with no sanctions match, no PEP match, no high-risk FATF jurisdiction counterparty, and no internal watchlist match (EV-003). No adverse media was identified for either the customer or the counterparty employer (EV-004). There is no structuring pattern — only one transaction is present, well below the RM22,500 threshold. The customer holds a standard KYC tier verified in May 2024 and carries a low risk rating. The overall evidence picture is entirely consistent with legitimate, routine payroll activity, and no red flags of any kind are present.",
+    "Citations": [
+      "ALERT-2026-0107#EV-001",
+      "ALERT-2026-0107#EV-002",
+      "ALERT-2026-0107#EV-003",
+      "ALERT-2026-0107#EV-004"
+    ]
+  }
+}

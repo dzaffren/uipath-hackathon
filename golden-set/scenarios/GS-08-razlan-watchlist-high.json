@@ -1,6 +1,6 @@
 {
-  "scenario_id": "GS-08-razlan-watchlist-medium",
-  "demo_beat": "internal watchlist match — medium escalation",
+  "scenario_id": "GS-08-razlan-watchlist-high",
+  "demo_beat": "internal watchlist match — high escalation",
   "risk_tier": "high",
   "recommendation": "escalate",
   "alert_reference": "ALERT-2026-0108",
@@ -8,7 +8,7 @@
   "customer_reference": "CUST-00008",
   "customer_name": "Razlan bin Yusof",
   "account_reference": "ACC-0008",
-  "aggregate_amount_myr": 42000.00,
+  "aggregate_amount_myr": 42000.0,
   "notes": "Customer appears on the internal watchlist (synthetic). One deterministic red flag fires: watchlist_match. The agent should call this high and escalate. RM42,000 is a moderate-value transfer. The watchlist hit is the key signal.",
   "evidence_bundle": [
     {
@@ -39,7 +39,7 @@
           {
             "transaction_id": "TXN-0801",
             "date": "2026-02-28",
-            "amount_myr": 42000.00,
+            "amount_myr": 42000.0,
             "type": "TRANSFER",
             "counterparty_reference": "CP-0008",
             "counterparty_name": "Summit Capital Corp",
@@ -47,7 +47,7 @@
             "narrative": "Investment transfer"
           }
         ],
-        "aggregate_amount_myr": 42000.00,
+        "aggregate_amount_myr": 42000.0,
         "transaction_count": 1
       }
     },
@@ -78,7 +78,11 @@
       "is_no_result": true,
       "payload": {
         "adverse_media": [],
-        "search_terms": ["Razlan bin Yusof", "CUST-00008", "Summit Capital Corp"]
+        "search_terms": [
+          "Razlan bin Yusof",
+          "CUST-00008",
+          "Summit Capital Corp"
+        ]
       }
     }
   ]

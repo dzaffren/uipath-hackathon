@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-03-invented-citation",
+  "job_id": 67662368,
+  "state": "Successful",
+  "risk_tier": "low",
+  "confidence": 92,
+  "recommendation": "close",
+  "rationale": "This alert is assessed as LOW risk. The evidence bundle presents a consistent and clean picture across all reviewed dimensions. The customer profile (EV-001) shows Ahmad Rashid is a KYC-verified retail customer (standard tier, verified January 2025) employed as a Logistics Coordinator with an account open since 2023 and no prior alerts — carrying an existing low risk rating. The single triggering transaction (EV-002) is a one-off transfer of RM8,200.00 on 2026-02-10 to Bumi Logistics Sdn Bhd, described as payment for logistics services. This amount is well below the structuring threshold band of RM22,500–RM25,000, there is only one transaction (no structuring pattern), and the counterparty is described as an established SME consistent with the customer's stated occupation. Screening results (EV-003) are entirely clear: no sanctions match, no PEP match, no high-risk FATF jurisdiction counterparty, and no internal watchlist match. Adverse media screening (EV-004) returned no results for either Ahmad Rashid or Bumi Logistics Sdn Bhd, and this is confirmed as an explicit no-result rather than missing data. None of the deterministic high-risk triggers are present. The activity is fully consistent with the customer's profile and described business relationship. Recommendation is to close, pending routine batch sign-off.",
+  "citations": [
+    "ALERT-2026-0103#EV-001",
+    "ALERT-2026-0103#EV-002",
+    "ALERT-2026-0103#EV-003",
+    "ALERT-2026-0103#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "low",
+    "Confidence": 92,
+    "Recommendation": "close",
+    "Rationale": "This alert is assessed as LOW risk. The evidence bundle presents a consistent and clean picture across all reviewed dimensions. The customer profile (EV-001) shows Ahmad Rashid is a KYC-verified retail customer (standard tier, verified January 2025) employed as a Logistics Coordinator with an account open since 2023 and no prior alerts — carrying an existing low risk rating. The single triggering transaction (EV-002) is a one-off transfer of RM8,200.00 on 2026-02-10 to Bumi Logistics Sdn Bhd, described as payment for logistics services. This amount is well below the structuring threshold band of RM22,500–RM25,000, there is only one transaction (no structuring pattern), and the counterparty is described as an established SME consistent with the customer's stated occupation. Screening results (EV-003) are entirely clear: no sanctions match, no PEP match, no high-risk FATF jurisdiction counterparty, and no internal watchlist match. Adverse media screening (EV-004) returned no results for either Ahmad Rashid or Bumi Logistics Sdn Bhd, and this is confirmed as an explicit no-result rather than missing data. None of the deterministic high-risk triggers are present. The activity is fully consistent with the customer's profile and described business relationship. Recommendation is to close, pending routine batch sign-off.",
+    "Citations": [
+      "ALERT-2026-0103#EV-001",
+      "ALERT-2026-0103#EV-002",
+      "ALERT-2026-0103#EV-003",
+      "ALERT-2026-0103#EV-004"
+    ]
+  }
+}

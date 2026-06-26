@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-05-sanctions-pep-high",
+  "job_id": 67662443,
+  "state": "Successful",
+  "risk_tier": "high",
+  "confidence": 98,
+  "recommendation": "escalate",
+  "rationale": "This alert is classified as HIGH risk based on multiple deterministic triggers firing simultaneously, warranting immediate escalation for senior/EDD review.\n\n**Trigger 1 — Sanctions Match (Counterparty):** The screening evidence (EV-003) confirms a positive OFAC SDN list match against counterparty Volkov Holdings (CP-0231). The transaction in question (EV-002) is a single outbound wire transfer of RM320,000.00 dated 2026-02-20 directed to this sanctioned entity. This alone constitutes a hard high-risk trigger under AML policy.\n\n**Trigger 2 — PEP Match (Beneficial Owner):** The same screening record (EV-003) identifies beneficial owner Hassan Farouk — holding 60% of Meridian Trading Ltd and serving as Director — as a Politically Exposed Person (PEP) in the role of Deputy Minister. The customer profile (EV-001) confirms his ownership and directorship. A PEP beneficial owner with majority control over a corporate account engaged in a high-value wire to a sanctioned counterparty materially elevates the risk picture.\n\n**Trigger 3 — Adverse Media on Counterparty:** Adverse media evidence (EV-004) further corroborates the risk, with Volkov Holdings named in a cross-border financial misconduct probe as recently as September 2024 — well within the relevant lookback window.\n\n**Aggravating Factors:** The customer (EV-001) is already rated high-risk and sits on an enhanced due diligence tier. The transaction (EV-002) is a first-ever interaction with this counterparty (no prior transactions on record), the amount is substantial at RM320,000, and the narrative (\"Trade settlement wire transfer\") is generic and unverified. The combination of a PEP-controlled entity transacting with a sanctioned, adverse-media-flagged counterparty in a single high-value wire is a textbook high-risk pattern.\n\n**No mitigating factors** are present in the evidence bundle. There are no prior legitimate transactions with this counterparty, no supporting trade documentation, and no contextual information that would reduce concern. Confidence is set at 98 given the clarity and multiplicity of hard triggers.",
+  "citations": [
+    "ALERT-2026-0105#EV-001",
+    "ALERT-2026-0105#EV-002",
+    "ALERT-2026-0105#EV-003",
+    "ALERT-2026-0105#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "high",
+    "Confidence": 98,
+    "Recommendation": "escalate",
+    "Rationale": "This alert is classified as HIGH risk based on multiple deterministic triggers firing simultaneously, warranting immediate escalation for senior/EDD review.\n\n**Trigger 1 — Sanctions Match (Counterparty):** The screening evidence (EV-003) confirms a positive OFAC SDN list match against counterparty Volkov Holdings (CP-0231). The transaction in question (EV-002) is a single outbound wire transfer of RM320,000.00 dated 2026-02-20 directed to this sanctioned entity. This alone constitutes a hard high-risk trigger under AML policy.\n\n**Trigger 2 — PEP Match (Beneficial Owner):** The same screening record (EV-003) identifies beneficial owner Hassan Farouk — holding 60% of Meridian Trading Ltd and serving as Director — as a Politically Exposed Person (PEP) in the role of Deputy Minister. The customer profile (EV-001) confirms his ownership and directorship. A PEP beneficial owner with majority control over a corporate account engaged in a high-value wire to a sanctioned counterparty materially elevates the risk picture.\n\n**Trigger 3 — Adverse Media on Counterparty:** Adverse media evidence (EV-004) further corroborates the risk, with Volkov Holdings named in a cross-border financial misconduct probe as recently as September 2024 — well within the relevant lookback window.\n\n**Aggravating Factors:** The customer (EV-001) is already rated high-risk and sits on an enhanced due diligence tier. The transaction (EV-002) is a first-ever interaction with this counterparty (no prior transactions on record), the amount is substantial at RM320,000, and the narrative (\"Trade settlement wire transfer\") is generic and unverified. The combination of a PEP-controlled entity transacting with a sanctioned, adverse-media-flagged counterparty in a single high-value wire is a textbook high-risk pattern.\n\n**No mitigating factors** are present in the evidence bundle. There are no prior legitimate transactions with this counterparty, no supporting trade documentation, and no contextual information that would reduce concern. Confidence is set at 98 given the clarity and multiplicity of hard triggers.",
+    "Citations": [
+      "ALERT-2026-0105#EV-001",
+      "ALERT-2026-0105#EV-002",
+      "ALERT-2026-0105#EV-003",
+      "ALERT-2026-0105#EV-004"
+    ]
+  }
+}

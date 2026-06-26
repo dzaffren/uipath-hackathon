@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-08-razlan-watchlist-high",
+  "job_id": 67662461,
+  "state": "Successful",
+  "risk_tier": "high",
+  "confidence": 92,
+  "recommendation": "escalate",
+  "rationale": "This alert is classified as HIGH risk, triggering an immediate escalation recommendation. The deterministic high-risk trigger of an internal watchlist match has been confirmed: evidence item EV-003 (screening) records a RED_FLAG status with a direct watchlist match on customer reference CUST-00008 (Razlan bin Yusof) against the institution's internal watchlist. This is corroborated by the customer profile in EV-001, which explicitly notes the customer carries a \"high\" risk rating and is flagged on the internal watchlist for a prior inquiry (details restricted). The transaction under review (EV-002) is a single outbound online transfer of RM42,000.00 on 2026-02-28 to Summit Capital Corp, narrated as an \"investment transfer.\" This amount is noted to be above the customer's typical monthly activity pattern, adding a behavioural anomaly to the picture. While no sanctions matches, PEP matches, high-risk jurisdiction links, or adverse media were identified (EV-003, EV-004), the presence of the internal watchlist match alone is sufficient to classify this alert as high risk under the defined risk tier framework. The restricted nature of the prior inquiry details further warrants senior/EDD review to assess the full context of the watchlist flag before any disposition is made.",
+  "citations": [
+    "ALERT-2026-0108#EV-001",
+    "ALERT-2026-0108#EV-002",
+    "ALERT-2026-0108#EV-003",
+    "ALERT-2026-0108#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "high",
+    "Confidence": 92,
+    "Recommendation": "escalate",
+    "Rationale": "This alert is classified as HIGH risk, triggering an immediate escalation recommendation. The deterministic high-risk trigger of an internal watchlist match has been confirmed: evidence item EV-003 (screening) records a RED_FLAG status with a direct watchlist match on customer reference CUST-00008 (Razlan bin Yusof) against the institution's internal watchlist. This is corroborated by the customer profile in EV-001, which explicitly notes the customer carries a \"high\" risk rating and is flagged on the internal watchlist for a prior inquiry (details restricted). The transaction under review (EV-002) is a single outbound online transfer of RM42,000.00 on 2026-02-28 to Summit Capital Corp, narrated as an \"investment transfer.\" This amount is noted to be above the customer's typical monthly activity pattern, adding a behavioural anomaly to the picture. While no sanctions matches, PEP matches, high-risk jurisdiction links, or adverse media were identified (EV-003, EV-004), the presence of the internal watchlist match alone is sufficient to classify this alert as high risk under the defined risk tier framework. The restricted nature of the prior inquiry details further warrants senior/EDD review to assess the full context of the watchlist flag before any disposition is made.",
+    "Citations": [
+      "ALERT-2026-0108#EV-001",
+      "ALERT-2026-0108#EV-002",
+      "ALERT-2026-0108#EV-003",
+      "ALERT-2026-0108#EV-004"
+    ]
+  }
+}

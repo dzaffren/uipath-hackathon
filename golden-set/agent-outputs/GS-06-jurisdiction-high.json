@@ -1,0 +1,28 @@
+{
+  "scenario_id": "GS-06-jurisdiction-high",
+  "job_id": 67662445,
+  "state": "Successful",
+  "risk_tier": "high",
+  "confidence": 95,
+  "recommendation": "escalate",
+  "rationale": "This alert is classified as HIGH risk, triggering mandatory escalation. The deterministic high-risk trigger is confirmed in EV-003 (screening): counterparty Sable Logistics is registered in Northland, identified as a synthetic FATF call-to-action jurisdiction. Under Aurora Verdict's risk tier definitions, a counterparty in a FATF call-to-action jurisdiction is an automatic high-risk trigger, regardless of other factors. This alone is sufficient to elevate the alert to high risk.\n\nCompounding this concern, EV-002 (transaction history) documents a single outbound wire transfer of RM280,000.00 on 2026-02-22 — a high-value transaction exceeding the RM250,000 mandatory-review threshold — directed to Sable Logistics. This is also noted as the third transaction with this counterparty within a 6-month window, indicating a recurring relationship with a high-risk jurisdiction entity. The transaction narrative (\"International logistics payment\") is generic and provides limited transparency.\n\nThe customer profile (EV-001) shows Global Ventures Pte Ltd is a trading and distribution corporate customer with a medium risk rating, KYC verified in September 2024, and no prior adverse history. While the sector is broadly consistent with logistics payments, the medium risk rating and the nature of the counterparty's jurisdiction elevate concern. No adverse media was found for either the customer or Sable Logistics (EV-004), and there are no sanctions, PEP, or internal watchlist matches. However, the absence of adverse media does not neutralise the confirmed FATF call-to-action jurisdiction trigger.\n\nIn summary, the confirmed high-risk jurisdiction match on the counterparty, combined with a high-value recurring wire transfer, mandates escalation for senior/EDD review.",
+  "citations": [
+    "ALERT-2026-0106#EV-001",
+    "ALERT-2026-0106#EV-002",
+    "ALERT-2026-0106#EV-003",
+    "ALERT-2026-0106#EV-004"
+  ],
+  "raw_output": {
+    "PydanticExtra": {},
+    "RiskTier": "high",
+    "Confidence": 95,
+    "Recommendation": "escalate",
+    "Rationale": "This alert is classified as HIGH risk, triggering mandatory escalation. The deterministic high-risk trigger is confirmed in EV-003 (screening): counterparty Sable Logistics is registered in Northland, identified as a synthetic FATF call-to-action jurisdiction. Under Aurora Verdict's risk tier definitions, a counterparty in a FATF call-to-action jurisdiction is an automatic high-risk trigger, regardless of other factors. This alone is sufficient to elevate the alert to high risk.\n\nCompounding this concern, EV-002 (transaction history) documents a single outbound wire transfer of RM280,000.00 on 2026-02-22 — a high-value transaction exceeding the RM250,000 mandatory-review threshold — directed to Sable Logistics. This is also noted as the third transaction with this counterparty within a 6-month window, indicating a recurring relationship with a high-risk jurisdiction entity. The transaction narrative (\"International logistics payment\") is generic and provides limited transparency.\n\nThe customer profile (EV-001) shows Global Ventures Pte Ltd is a trading and distribution corporate customer with a medium risk rating, KYC verified in September 2024, and no prior adverse history. While the sector is broadly consistent with logistics payments, the medium risk rating and the nature of the counterparty's jurisdiction elevate concern. No adverse media was found for either the customer or Sable Logistics (EV-004), and there are no sanctions, PEP, or internal watchlist matches. However, the absence of adverse media does not neutralise the confirmed FATF call-to-action jurisdiction trigger.\n\nIn summary, the confirmed high-risk jurisdiction match on the counterparty, combined with a high-value recurring wire transfer, mandates escalation for senior/EDD review.",
+    "Citations": [
+      "ALERT-2026-0106#EV-001",
+      "ALERT-2026-0106#EV-002",
+      "ALERT-2026-0106#EV-003",
+      "ALERT-2026-0106#EV-004"
+    ]
+  }
+}

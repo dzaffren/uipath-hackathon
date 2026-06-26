@@ -1,0 +1,82 @@
+[
+  {
+    "TestCase": "GS-03-invented-citation",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "11.3s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-04-priya-ambiguous-medium",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "12.1s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-02-okoro-structuring-high",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "12.3s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-01-mariam-clean-low",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "10.2s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-05-sanctions-pep-high",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "12.5s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-08-razlan-watchlist-high",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "11.8s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-07-lee-clean-low",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "10.3s",
+    "Error": "-",
+    "Justifications": "-"
+  },
+  {
+    "TestCase": "GS-06-jurisdiction-high",
+    "Status": "completed",
+    "Score": true,
+    "EvaluatorScores": "Exact Match — risk_tier: true",
+    "Tokens": "-",
+    "Duration": "12.3s",
+    "Error": "-",
+    "Justifications": "-"
+  }
+]
