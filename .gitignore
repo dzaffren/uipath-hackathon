@@ -1,0 +1,22 @@
+# --- Build / pack output ---
+/out/
+/output/
+/tmp-pull/
+
+# --- Local deploy config (regenerate via: uip solution deploy config get) ---
+/config.json
+/config*.json
+
+# --- Eval scratch / intermediate run artifacts ---
+AuroraVerdict/eval-*.json
+AuroraVerdict/eval-*.err
+AuroraVerdict/eval-*.txt
+AuroraVerdict/eval-*.out
+AuroraVerdict/agentreleases.*
+AuroraVerdict/TempBpmnRef/
+
+# Derived duplicate of golden-set/scenarios/ (built during agent eval runs)
+AuroraVerdict/golden-inputs/
+
+# Ad-hoc local verification script (not part of the solution or eval flow)
+/verify-detectors.js
