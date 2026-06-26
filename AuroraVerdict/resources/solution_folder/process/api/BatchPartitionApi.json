@@ -1,0 +1,39 @@
+{
+  "docVersion": "1.0.0",
+  "resource": {
+    "name": "BatchPartitionApi",
+    "kind": "process",
+    "type": "api",
+    "apiVersion": "orchestrator.uipath.com/v1",
+    "projectKey": "f8a9b0c1-d2e3-4f56-a789-b0c1d2e3f456",
+    "isOverridable": true,
+    "dependencies": [
+      {
+        "kind": "package",
+        "name": "BatchPartitionApi"
+      }
+    ],
+    "runtimeDependencies": [],
+    "folders": [
+      {
+        "fullyQualifiedName": "solution_folder"
+      }
+    ],
+    "spec": {
+      "type": "Api",
+      "name": "BatchPartitionApi",
+      "package": {
+        "key": "f98ea0be-a1e8-44d2-a6dc-a73f8c2def23"
+      },
+      "packageName": "AuroraVerdict.api.BatchPartitionApi",
+      "targetFrameworkValue": "Portable",
+      "retentionAction": "Delete",
+      "retentionPeriod": 30,
+      "staleRetentionAction": "Delete",
+      "staleRetentionPeriod": 180
+    },
+    "locks": [],
+    "key": "28f1d994-661d-4fd6-a18f-1fef87b36269",
+    "files": []
+  }
+}
