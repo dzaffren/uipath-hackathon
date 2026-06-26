@@ -23,3 +23,6 @@ Captured during build sessions. Entries here inform future `/build` runs via Pha
 
 - [confidence-unit-normalisation](pattern-confidence-unit-normalisation.md) — normalize agent confidence from 0–1 float to 0–100 before threshold comparisons; agents can return either unit
 - [bpmn-shared-api-binding](pattern-bpmn-shared-api-binding.md) — reuse one binding entry for multiple BPMN service tasks invoking the same API-Workflow resource; the elementId scopes each invocation, sharing one entry passes solution pack validation
+- [foreach-js-invoke-variable-args](pattern-foreach-js-invoke-variable-args.md) — ForEach iteration variables ($alertItem etc.) must be passed explicitly in JsInvoke arguments to be visible in JS code
+- [foreach-results-accumulation](pattern-foreach-results-accumulation.md) — accumulate ForEach per-iteration results into a growing array via $context?.outputs read-back on each iteration
+- [bpmn-loop-back-gateway-sentinel](pattern-bpmn-loop-back-gateway-sentinel.md) — implement N-item sequential BPMN iteration as a loop-back exclusive gateway with a sentinel variable; summary action sits on the exit branch
