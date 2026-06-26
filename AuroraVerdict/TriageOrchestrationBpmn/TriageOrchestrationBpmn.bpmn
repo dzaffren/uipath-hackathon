@@ -26,6 +26,16 @@
         <uipath:inputOutput id="Var_GuardResult" name="guard_result" type="json" />
         <uipath:inputOutput id="Var_HighAuditInput" name="high_audit_input" type="json" />
         <uipath:inputOutput id="Var_HighAuditResult" name="high_audit_result" type="json" />
+        <uipath:inputOutput id="Var_BatchInputs" name="batch_inputs" type="json" />
+        <uipath:inputOutput id="Var_BatchResult" name="batch_result" type="json" />
+        <uipath:inputOutput id="Var_BatchExtracted" name="batch_extracted" type="json" />
+        <uipath:inputOutput id="Var_LoopState" name="loop_state" type="json" />
+        <uipath:inputOutput id="Var_CurrentPulledItem" name="current_pulled_item" type="json" />
+        <uipath:inputOutput id="Var_IndividualReviewResult" name="individual_review_result" type="json" />
+        <uipath:inputOutput id="Var_BatchSignoffResult" name="batch_signoff_result" type="json" />
+        <uipath:inputOutput id="Var_BatchOutcome" name="batch_outcome" type="string" />
+        <uipath:inputOutput id="Var_BatchAuditInput" name="batch_audit_input" type="json" />
+        <uipath:inputOutput id="Var_BatchAuditResult" name="batch_audit_result" type="json" />
       </uipath:variables>
 
       <uipath:bindings version="v1">
@@ -39,6 +49,10 @@
         <uipath:binding id="Binding_AuditWrite_Folder" name="AuditWriteApi" type="process" elementId="Task_AuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="FolderPath" />
         <uipath:binding id="Binding_ChallengerAgent_Name" name="ChallengerAgent" type="process" elementId="Task_ChallengerAgent" resource="process" resourceSubType="Agent" resourceKey="AuroraVerdict.Agent.ChallengerAgent" propertyAttribute="name" />
         <uipath:binding id="Binding_ChallengerAgent_Folder" name="ChallengerAgent" type="process" elementId="Task_ChallengerAgent" resource="process" resourceSubType="Agent" resourceKey="AuroraVerdict.Agent.ChallengerAgent" propertyAttribute="folderPath" />
+        <uipath:binding id="Binding_BatchPartition_Name" name="BatchPartitionApi" type="process" elementId="Task_BatchPartition" resource="process" resourceKey="AuroraVerdict.Api.BatchPartitionApi" propertyAttribute="Name" />
+        <uipath:binding id="Binding_BatchPartition_Folder" name="BatchPartitionApi" type="process" elementId="Task_BatchPartition" resource="process" resourceKey="AuroraVerdict.Api.BatchPartitionApi" propertyAttribute="FolderPath" />
+        <uipath:binding id="Binding_BatchAuditWrite_Name" name="AuditWriteApi" type="process" elementId="Task_BatchAuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="Name" />
+        <uipath:binding id="Binding_BatchAuditWrite_Folder" name="AuditWriteApi" type="process" elementId="Task_BatchAuditWrite" resource="process" resourceKey="AuroraVerdict.Api.AuditWriteApi" propertyAttribute="FolderPath" />
       </uipath:bindings>
 
     </bpmn:extensionElements>
@@ -428,15 +442,342 @@ return {
     </bpmn:endEvent>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- END (low_batch stub — batch-disposition story owns the route) -->
+    <!-- LOW-BATCH BRANCH                                             -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <bpmn:endEvent id="End_LowBatch" name="Low-risk auto-batch (batch story)">
+
+    <!-- Step 1: Build batch params for today -->
+    <bpmn:scriptTask id="Task_BuildBatchParams" name="Build Batch Params" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{}]]></uipath:input>
+          <uipath:output name="batch_inputs" type="json" var="Var_BatchInputs" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_Router_To_LowBatch</bpmn:incoming>
+      <bpmn:outgoing>Flow_BuildBatchParams_To_BatchPartition</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var today = new Date();
+var dd = String(today.getDate()).padStart(2, '0');
+var mm = String(today.getMonth() + 1).padStart(2, '0');
+var yyyy = today.getFullYear();
+var batchDate = yyyy + '-' + mm + '-' + dd;
+var batchReference = 'BATCH-' + batchDate;
+return {
+  batchReference: batchReference,
+  batchDate: batchDate,
+  sampleRatePct: 5,
+  highValueThresholdMYR: 250000,
+  signerName: 'Supervisor'
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 2: Call BatchPartition API -->
+    <bpmn:serviceTask id="Task_BatchPartition" name="Partition Batch">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_BatchPartition_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_BatchPartition_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"batchReference":"=vars.Var_BatchInputs.batchReference","batchDate":"=vars.Var_BatchInputs.batchDate","sampleRatePct":"=vars.Var_BatchInputs.sampleRatePct","highValueThresholdMYR":"=vars.Var_BatchInputs.highValueThresholdMYR","signerName":"=vars.Var_BatchInputs.signerName"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_BatchResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BuildBatchParams_To_BatchPartition</bpmn:incoming>
+      <bpmn:outgoing>Flow_BatchPartition_To_ExtractBatch</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Step 3: Extract partition result fields -->
+    <bpmn:scriptTask id="Task_ExtractBatchResult" name="Extract Batch Result" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "batchResult": "=vars.Var_BatchResult"
+}]]></uipath:input>
+          <uipath:output name="batch_extracted" type="json" var="Var_BatchExtracted" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BatchPartition_To_ExtractBatch</bpmn:incoming>
+      <bpmn:outgoing>Flow_ExtractBatch_To_InitLoop</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var pulled = (batchResult && Array.isArray(batchResult.pulled)) ? batchResult.pulled : [];
+var bulk = (batchResult && Array.isArray(batchResult.bulk)) ? batchResult.bulk : [];
+var stats = (batchResult && batchResult.stats) ? batchResult.stats : {};
+var batchSignoffId = (batchResult && batchResult.batchSignoffId) ? batchResult.batchSignoffId : '';
+var batchReference = (batchResult && batchResult.batchReference) ? batchResult.batchReference : '';
+return {
+  pulled: pulled,
+  bulk: bulk,
+  stats: stats,
+  batch_signoff_id: batchSignoffId,
+  batch_reference: batchReference
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 4: Initialise review loop state -->
+    <bpmn:scriptTask id="Task_InitLoopState" name="Init Loop State" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "batchExtracted": "=vars.Var_BatchExtracted"
+}]]></uipath:input>
+          <uipath:output name="loop_state" type="json" var="Var_LoopState" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ExtractBatch_To_InitLoop</bpmn:incoming>
+      <bpmn:outgoing>Flow_InitLoop_To_ReviewGateway</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var pulled = (batchExtracted && Array.isArray(batchExtracted.pulled)) ? batchExtracted.pulled : [];
+var loopDone = (pulled.length === 0) ? 'yes' : 'no';
+return {
+  current_index: 0,
+  loop_done: loopDone,
+  reviewed_items: []
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 5: Loop gateway — check if more pulled items remain -->
+    <bpmn:exclusiveGateway id="Gateway_ReviewLoop" name="More to review?">
+      <bpmn:incoming>Flow_InitLoop_To_ReviewGateway</bpmn:incoming>
+      <bpmn:incoming>Flow_ProcessOutcome_To_ReviewGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReviewLoop_To_PrepareItem</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ReviewLoop_To_Signoff</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Step 6: Prepare current pulled item for HITL display -->
+    <bpmn:scriptTask id="Task_PrepareReviewItem" name="Prepare Review Item" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "batchExtracted": "=vars.Var_BatchExtracted",
+  "loopState": "=vars.Var_LoopState"
+}]]></uipath:input>
+          <uipath:output name="current_pulled_item" type="json" var="Var_CurrentPulledItem" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ReviewLoop_To_PrepareItem</bpmn:incoming>
+      <bpmn:outgoing>Flow_PrepareItem_To_IndividualReview</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var pulled = (batchExtracted && Array.isArray(batchExtracted.pulled)) ? batchExtracted.pulled : [];
+var idx = (loopState && typeof loopState.current_index === 'number') ? loopState.current_index : 0;
+var item = (idx < pulled.length) ? pulled[idx] : {};
+return item;
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 7: Individual pulled-item HITL review -->
+    <bpmn:userTask id="Task_IndividualReview" name="Review Pulled Alert">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Actions.HITL" version="v1" />
+          <uipath:input name="HitlTaskArguments" type="json" target="bodyField"><![CDATA[{
+  "title": "Individual Pulled Alert Review",
+  "fields": [
+    {"id": "alertReference", "label": "Alert Reference", "type": "text", "direction": "input", "value": "=vars.Var_CurrentPulledItem.alert_reference"},
+    {"id": "customerName", "label": "Customer Name", "type": "text", "direction": "input", "value": "=vars.Var_CurrentPulledItem.customer_name"},
+    {"id": "aggregateAmountMYR", "label": "Aggregate Amount (MYR)", "type": "number", "direction": "input", "value": "=vars.Var_CurrentPulledItem.aggregate_amount_myr"},
+    {"id": "pulledReason", "label": "Pulled for Review Reason", "type": "text", "direction": "input", "value": "=vars.Var_CurrentPulledItem.pulled_reason"},
+    {"id": "correctionReason", "label": "Correction Reason (required if correcting upward)", "type": "text", "direction": "output"}
+  ],
+  "outcomes": [
+    {"id": "confirm_low", "name": "Confirm Low Risk", "isPrimary": true, "action": "Continue"},
+    {"id": "correct_upward", "name": "Correct Upward", "action": "Continue", "requires": ["correctionReason"]}
+  ]
+}]]></uipath:input>
+          <uipath:output name="Process response" type="Actions.HITL" var="Var_IndividualReviewResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PrepareItem_To_IndividualReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_IndividualReview_To_ProcessOutcome</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Step 8: Record outcome, advance index, update loop_done -->
+    <bpmn:scriptTask id="Task_ProcessReviewOutcome" name="Process Review Outcome" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "batchExtracted": "=vars.Var_BatchExtracted",
+  "loopState": "=vars.Var_LoopState",
+  "individualReviewResult": "=vars.Var_IndividualReviewResult",
+  "currentPulledItem": "=vars.Var_CurrentPulledItem"
+}]]></uipath:input>
+          <uipath:output name="loop_state" type="json" var="Var_LoopState" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_IndividualReview_To_ProcessOutcome</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProcessOutcome_To_ReviewGateway</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var pulled = (batchExtracted && Array.isArray(batchExtracted.pulled)) ? batchExtracted.pulled : [];
+var idx = (loopState && typeof loopState.current_index === 'number') ? loopState.current_index : 0;
+var reviewedItems = (loopState && Array.isArray(loopState.reviewed_items)) ? loopState.reviewed_items.slice() : [];
+var outcomeId = (individualReviewResult && individualReviewResult.outcomeId) ? individualReviewResult.outcomeId : 'confirm_low';
+var correctionReason = (individualReviewResult && individualReviewResult.fields && individualReviewResult.fields.correctionReason) ? individualReviewResult.fields.correctionReason : '';
+var alertId = (currentPulledItem && currentPulledItem.alert_id) ? currentPulledItem.alert_id : '';
+var humanAction = (outcomeId === 'correct_upward') ? 'correct_upward' : 'confirm_low';
+reviewedItems.push({
+  alert_id: alertId,
+  human_action: humanAction,
+  correction_reason: correctionReason,
+  was_pulled: true
+});
+var nextIdx = idx + 1;
+var loopDone = (nextIdx >= pulled.length) ? 'yes' : 'no';
+return {
+  current_index: nextIdx,
+  loop_done: loopDone,
+  reviewed_items: reviewedItems
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 9: Batch summary sign-off HITL (gated — only reached after all pulled items reviewed) -->
+    <bpmn:userTask id="Task_SummarySignoff" name="Batch Sign-Off">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Actions.HITL" version="v1" />
+          <uipath:input name="HitlTaskArguments" type="json" target="bodyField"><![CDATA[{
+  "title": "Batch Sign-Off — Low-Risk Auto-Disposition",
+  "fields": [
+    {"id": "batchReference", "label": "Batch Reference", "type": "text", "direction": "input", "value": "=vars.Var_BatchExtracted.batch_reference"},
+    {"id": "totalAlerts", "label": "Total Alerts in Batch", "type": "number", "direction": "input", "value": "=vars.Var_BatchExtracted.stats.total"},
+    {"id": "sampledCount", "label": "Sampled for Review", "type": "number", "direction": "input", "value": "=vars.Var_BatchExtracted.stats.sampled_count"},
+    {"id": "highValueCount", "label": "High-Value Alerts Reviewed", "type": "number", "direction": "input", "value": "=vars.Var_BatchExtracted.stats.high_value_count"},
+    {"id": "pulledCount", "label": "Total Pulled for Review", "type": "number", "direction": "input", "value": "=vars.Var_BatchExtracted.stats.pulled_count"},
+    {"id": "bulkCount", "label": "Bulk Auto-Approved", "type": "number", "direction": "input", "value": "=vars.Var_BatchExtracted.stats.bulk_count"},
+    {"id": "batchSignoffReason", "label": "Sign-Off Notes (optional)", "type": "text", "direction": "output"}
+  ],
+  "outcomes": [
+    {"id": "approve_batch", "name": "Approve Batch", "isPrimary": true, "action": "Continue"},
+    {"id": "reject_batch", "name": "Reject Batch", "action": "Continue"}
+  ]
+}]]></uipath:input>
+          <uipath:output name="Process response" type="Actions.HITL" var="Var_BatchSignoffResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ReviewLoop_To_Signoff</bpmn:incoming>
+      <bpmn:outgoing>Flow_Signoff_To_ExtractSignoff</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Step 10: Extract signoff outcome string -->
+    <bpmn:scriptTask id="Task_ExtractSignoffOutcome" name="Extract Signoff Outcome" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "batchSignoffResult": "=vars.Var_BatchSignoffResult"
+}]]></uipath:input>
+          <uipath:output name="batch_outcome" type="string" var="Var_BatchOutcome" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Signoff_To_ExtractSignoff</bpmn:incoming>
+      <bpmn:outgoing>Flow_ExtractSignoff_To_SignoffGateway</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var outcomeId = (batchSignoffResult && batchSignoffResult.outcomeId) ? batchSignoffResult.outcomeId : 'reject_batch';
+return (outcomeId === 'approve_batch') ? 'approve' : 'reject';
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 11: Branch on approve / reject -->
+    <bpmn:exclusiveGateway id="Gateway_BatchSignoffOutcome" name="Signoff outcome?">
+      <bpmn:incoming>Flow_ExtractSignoff_To_SignoffGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_SignoffApprove</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SignoffReject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Step 12: Build batch audit input -->
+    <bpmn:scriptTask id="Task_BuildBatchAuditInput" name="Build Batch Audit Input" scriptFormat="JavaScript">
+      <bpmn:extensionElements>
+        <uipath:mapping version="v1">
+          <uipath:type value="BPMN.ScriptTask" version="v1" />
+          <uipath:input name="args" type="json" target="bodyField"><![CDATA[{
+  "batchExtracted": "=vars.Var_BatchExtracted",
+  "loopState": "=vars.Var_LoopState",
+  "batchSignoffResult": "=vars.Var_BatchSignoffResult",
+  "batchInputs": "=vars.Var_BatchInputs"
+}]]></uipath:input>
+          <uipath:output name="batch_audit_input" type="json" var="Var_BatchAuditInput" source="=result" />
+        </uipath:mapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SignoffApprove</bpmn:incoming>
+      <bpmn:outgoing>Flow_BuildBatchAudit_To_BatchAuditWrite</bpmn:outgoing>
+      <bpmn:script><![CDATA[
+var pulled = (batchExtracted && Array.isArray(batchExtracted.pulled)) ? batchExtracted.pulled : [];
+var bulk = (batchExtracted && Array.isArray(batchExtracted.bulk)) ? batchExtracted.bulk : [];
+var reviewedItems = (loopState && Array.isArray(loopState.reviewed_items)) ? loopState.reviewed_items : [];
+var batchSignoffId = (batchExtracted && batchExtracted.batch_signoff_id) ? batchExtracted.batch_signoff_id : '';
+var batchReference = (batchExtracted && batchExtracted.batch_reference) ? batchExtracted.batch_reference : '';
+var signerName = '';
+if (batchSignoffResult && batchSignoffResult.completedBy) {
+  signerName = batchSignoffResult.completedBy;
+} else if (batchInputs && batchInputs.signerName) {
+  signerName = batchInputs.signerName;
+} else {
+  signerName = 'Supervisor';
+}
+var reviewedMap = {};
+reviewedItems.forEach(function(r) { reviewedMap[r.alert_id] = r; });
+var pulledAlerts = pulled.map(function(a) {
+  var rev = reviewedMap[a.alert_id];
+  if (rev) { return rev; }
+  return { alert_id: a.alert_id, was_pulled: true, human_action: 'batch_approved', correction_reason: '' };
+});
+var bulkAlerts = bulk.map(function(a) {
+  return { alert_id: a.alert_id, was_pulled: false, human_action: 'batch_approved', correction_reason: '' };
+});
+var allAlerts = pulledAlerts.concat(bulkAlerts);
+var now = new Date().toISOString();
+return {
+  batch_signoff_id: batchSignoffId,
+  batch_reference: batchReference,
+  batch_alerts: allAlerts,
+  decision_maker_name: signerName,
+  route_taken: 'low_batch',
+  decision_timestamp: now
+};
+      ]]></bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Step 13: Batch AuditWrite (writes DecisionRecord for all batch alerts) -->
+    <bpmn:serviceTask id="Task_BatchAuditWrite" name="Write Batch Decision Records">
+      <bpmn:extensionElements>
+        <uipath:activity version="v1">
+          <uipath:type value="Orchestrator.ExecuteApiWorkflowAsync" version="v1" />
+          <uipath:context>
+            <uipath:input name="Name" type="string" value="=bindings.Binding_BatchAuditWrite_Name" />
+            <uipath:input name="FolderPath" type="string" value="=bindings.Binding_BatchAuditWrite_Folder" />
+          </uipath:context>
+          <uipath:input name="payload" type="json" target="bodyField"><![CDATA[{"batch_signoff_id":"=vars.Var_BatchAuditInput.batch_signoff_id","batch_reference":"=vars.Var_BatchAuditInput.batch_reference","batch_alerts":"=vars.Var_BatchAuditInput.batch_alerts","decision_maker_name":"=vars.Var_BatchAuditInput.decision_maker_name","route_taken":"=vars.Var_BatchAuditInput.route_taken","decision_timestamp":"=vars.Var_BatchAuditInput.decision_timestamp"}]]></uipath:input>
+          <uipath:output name="Process response" type="Orchestrator.RunJob" var="Var_BatchAuditResult" />
+        </uipath:activity>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BuildBatchAudit_To_BatchAuditWrite</bpmn:incoming>
+      <bpmn:outgoing>Flow_BatchAuditWrite_To_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- END: Batch approved and written -->
+    <bpmn:endEvent id="End_LowBatchComplete" name="Low-batch disposition complete">
+      <bpmn:incoming>Flow_BatchAuditWrite_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- END: Batch rejected by supervisor -->
+    <bpmn:endEvent id="End_BatchRejected" name="Batch rejected — no records written">
+      <bpmn:incoming>Flow_SignoffReject</bpmn:incoming>
     </bpmn:endEvent>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- SEQUENCE FLOWS                                               -->
     <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Main per-alert flow -->
     <bpmn:sequenceFlow id="Flow_Start_To_Evidence" sourceRef="Start_Triage" targetRef="Task_EvidenceGather" />
     <bpmn:sequenceFlow id="Flow_Evidence_To_Agent" sourceRef="Task_EvidenceGather" targetRef="Task_TriageAgent" />
     <bpmn:sequenceFlow id="Flow_Agent_To_Gate" sourceRef="Task_TriageAgent" targetRef="Task_DecisionGate" />
@@ -448,18 +789,47 @@ return {
     <bpmn:sequenceFlow id="Flow_Router_To_HighChallenger" sourceRef="Gateway_Route" targetRef="Task_ChallengerAgent">
       <bpmn:conditionExpression>=vars.Var_Route == "high_challenger"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Router_To_LowBatch" sourceRef="Gateway_Route" targetRef="End_LowBatch">
+    <bpmn:sequenceFlow id="Flow_Router_To_LowBatch" sourceRef="Gateway_Route" targetRef="Task_BuildBatchParams">
       <bpmn:conditionExpression>=vars.Var_Route == "low_batch"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
+
+    <!-- Medium signoff flow -->
     <bpmn:sequenceFlow id="Flow_HITL_To_BuildAudit" sourceRef="Task_HITL" targetRef="Task_BuildAudit" />
     <bpmn:sequenceFlow id="Flow_BuildAudit_To_AuditWrite" sourceRef="Task_BuildAudit" targetRef="Task_AuditWrite" />
     <bpmn:sequenceFlow id="Flow_AuditWrite_To_End" sourceRef="Task_AuditWrite" targetRef="End_Done" />
+
+    <!-- High challenger flow -->
     <bpmn:sequenceFlow id="Flow_Challenger_To_ChallengerGate" sourceRef="Task_ChallengerAgent" targetRef="Task_ChallengerGate" />
     <bpmn:sequenceFlow id="Flow_ChallengerGate_To_HighHITL" sourceRef="Task_ChallengerGate" targetRef="Task_HighHITL" />
     <bpmn:sequenceFlow id="Flow_HighHITL_To_Guard" sourceRef="Task_HighHITL" targetRef="Task_OverrideReasonGuard" />
     <bpmn:sequenceFlow id="Flow_Guard_To_BuildHighAudit" sourceRef="Task_OverrideReasonGuard" targetRef="Task_BuildHighAudit" />
     <bpmn:sequenceFlow id="Flow_BuildHighAudit_To_HighAuditWrite" sourceRef="Task_BuildHighAudit" targetRef="Task_HighAuditWrite" />
     <bpmn:sequenceFlow id="Flow_HighAuditWrite_To_End" sourceRef="Task_HighAuditWrite" targetRef="End_HighDone" />
+
+    <!-- Low batch flow -->
+    <bpmn:sequenceFlow id="Flow_BuildBatchParams_To_BatchPartition" sourceRef="Task_BuildBatchParams" targetRef="Task_BatchPartition" />
+    <bpmn:sequenceFlow id="Flow_BatchPartition_To_ExtractBatch" sourceRef="Task_BatchPartition" targetRef="Task_ExtractBatchResult" />
+    <bpmn:sequenceFlow id="Flow_ExtractBatch_To_InitLoop" sourceRef="Task_ExtractBatchResult" targetRef="Task_InitLoopState" />
+    <bpmn:sequenceFlow id="Flow_InitLoop_To_ReviewGateway" sourceRef="Task_InitLoopState" targetRef="Gateway_ReviewLoop" />
+    <bpmn:sequenceFlow id="Flow_ReviewLoop_To_PrepareItem" sourceRef="Gateway_ReviewLoop" targetRef="Task_PrepareReviewItem">
+      <bpmn:conditionExpression>=vars.Var_LoopState.loop_done == "no"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ReviewLoop_To_Signoff" sourceRef="Gateway_ReviewLoop" targetRef="Task_SummarySignoff">
+      <bpmn:conditionExpression>=vars.Var_LoopState.loop_done == "yes"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_PrepareItem_To_IndividualReview" sourceRef="Task_PrepareReviewItem" targetRef="Task_IndividualReview" />
+    <bpmn:sequenceFlow id="Flow_IndividualReview_To_ProcessOutcome" sourceRef="Task_IndividualReview" targetRef="Task_ProcessReviewOutcome" />
+    <bpmn:sequenceFlow id="Flow_ProcessOutcome_To_ReviewGateway" sourceRef="Task_ProcessReviewOutcome" targetRef="Gateway_ReviewLoop" />
+    <bpmn:sequenceFlow id="Flow_Signoff_To_ExtractSignoff" sourceRef="Task_SummarySignoff" targetRef="Task_ExtractSignoffOutcome" />
+    <bpmn:sequenceFlow id="Flow_ExtractSignoff_To_SignoffGateway" sourceRef="Task_ExtractSignoffOutcome" targetRef="Gateway_BatchSignoffOutcome" />
+    <bpmn:sequenceFlow id="Flow_SignoffApprove" sourceRef="Gateway_BatchSignoffOutcome" targetRef="Task_BuildBatchAuditInput">
+      <bpmn:conditionExpression>=vars.Var_BatchOutcome == "approve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_SignoffReject" sourceRef="Gateway_BatchSignoffOutcome" targetRef="End_BatchRejected">
+      <bpmn:conditionExpression>=vars.Var_BatchOutcome == "reject"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_BuildBatchAudit_To_BatchAuditWrite" sourceRef="Task_BuildBatchAuditInput" targetRef="Task_BatchAuditWrite" />
+    <bpmn:sequenceFlow id="Flow_BatchAuditWrite_To_End" sourceRef="Task_BatchAuditWrite" targetRef="End_LowBatchComplete" />
 
   </bpmn:process>
 
@@ -469,12 +839,10 @@ return {
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_TriageOrchestration">
 
-      <!-- Main flow shapes -->
+      <!-- ── Main flow shapes ── -->
       <bpmndi:BPMNShape id="S_Start_Triage" bpmnElement="Start_Triage">
         <dc:Bounds x="80" y="142" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="53" y="185" width="90" height="27" />
-        </bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="53" y="185" width="90" height="27" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="S_Task_EvidenceGather" bpmnElement="Task_EvidenceGather">
@@ -495,11 +863,10 @@ return {
 
       <bpmndi:BPMNShape id="S_Gateway_Route" bpmnElement="Gateway_Route" isMarkerVisible="true">
         <dc:Bounds x="895" y="135" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="898" y="192" width="44" height="14" />
-        </bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="898" y="192" width="44" height="14" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
+      <!-- Medium signoff branch -->
       <bpmndi:BPMNShape id="S_Task_HITL" bpmnElement="Task_HITL">
         <dc:Bounds x="1010" y="120" width="120" height="80" />
       </bpmndi:BPMNShape>
@@ -514,17 +881,7 @@ return {
 
       <bpmndi:BPMNShape id="S_End_Done" bpmnElement="End_Done">
         <dc:Bounds x="1552" y="142" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1530" y="185" width="80" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-
-      <!-- Low batch end -->
-      <bpmndi:BPMNShape id="S_End_LowBatch" bpmnElement="End_LowBatch">
-        <dc:Bounds x="1010" y="280" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="973" y="323" width="110" height="27" />
-        </bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="1530" y="185" width="80" height="14" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <!-- High-risk branch shapes -->
@@ -554,98 +911,206 @@ return {
 
       <bpmndi:BPMNShape id="S_End_HighDone" bpmnElement="End_HighDone">
         <dc:Bounds x="1942" y="442" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1918" y="485" width="84" height="27" />
-        </bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel><dc:Bounds x="1918" y="485" width="84" height="27" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <!-- Main flow edges -->
+      <!-- Low-batch branch shapes (y=680 row) -->
+      <bpmndi:BPMNShape id="S_Task_BuildBatchParams" bpmnElement="Task_BuildBatchParams">
+        <dc:Bounds x="940" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_BatchPartition" bpmnElement="Task_BatchPartition">
+        <dc:Bounds x="1120" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_ExtractBatchResult" bpmnElement="Task_ExtractBatchResult">
+        <dc:Bounds x="1300" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_InitLoopState" bpmnElement="Task_InitLoopState">
+        <dc:Bounds x="1480" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Gateway_ReviewLoop" bpmnElement="Gateway_ReviewLoop" isMarkerVisible="true">
+        <dc:Bounds x="1660" y="695" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1634" y="752" width="103" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Review loop row (y=850) -->
+      <bpmndi:BPMNShape id="S_Task_PrepareReviewItem" bpmnElement="Task_PrepareReviewItem">
+        <dc:Bounds x="1620" y="850" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_IndividualReview" bpmnElement="Task_IndividualReview">
+        <dc:Bounds x="1800" y="850" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_ProcessReviewOutcome" bpmnElement="Task_ProcessReviewOutcome">
+        <dc:Bounds x="1980" y="850" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Summary signoff and approve/reject (continuing right from y=680 row) -->
+      <bpmndi:BPMNShape id="S_Task_SummarySignoff" bpmnElement="Task_SummarySignoff">
+        <dc:Bounds x="1780" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_ExtractSignoffOutcome" bpmnElement="Task_ExtractSignoffOutcome">
+        <dc:Bounds x="1960" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Gateway_BatchSignoffOutcome" bpmnElement="Gateway_BatchSignoffOutcome" isMarkerVisible="true">
+        <dc:Bounds x="2140" y="695" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2112" y="752" width="106" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_BuildBatchAuditInput" bpmnElement="Task_BuildBatchAuditInput">
+        <dc:Bounds x="2260" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_Task_BatchAuditWrite" bpmnElement="Task_BatchAuditWrite">
+        <dc:Bounds x="2440" y="680" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_End_LowBatchComplete" bpmnElement="End_LowBatchComplete">
+        <dc:Bounds x="2622" y="702" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2596" y="745" width="88" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="S_End_BatchRejected" bpmnElement="End_BatchRejected">
+        <dc:Bounds x="2147" y="820" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2118" y="863" width="94" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- ── Main flow edges ── -->
       <bpmndi:BPMNEdge id="E_Flow_Start_To_Evidence" bpmnElement="Flow_Start_To_Evidence">
-        <di:waypoint x="116" y="160" />
-        <di:waypoint x="170" y="160" />
+        <di:waypoint x="116" y="160" /><di:waypoint x="170" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Evidence_To_Agent" bpmnElement="Flow_Evidence_To_Agent">
-        <di:waypoint x="290" y="160" />
-        <di:waypoint x="350" y="160" />
+        <di:waypoint x="290" y="160" /><di:waypoint x="350" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Agent_To_Gate" bpmnElement="Flow_Agent_To_Gate">
-        <di:waypoint x="470" y="160" />
-        <di:waypoint x="530" y="160" />
+        <di:waypoint x="470" y="160" /><di:waypoint x="530" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Gate_To_ExtractRoute" bpmnElement="Flow_Gate_To_ExtractRoute">
-        <di:waypoint x="650" y="160" />
-        <di:waypoint x="710" y="160" />
+        <di:waypoint x="650" y="160" /><di:waypoint x="710" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_ExtractRoute_To_Router" bpmnElement="Flow_ExtractRoute_To_Router">
-        <di:waypoint x="830" y="160" />
-        <di:waypoint x="895" y="160" />
+        <di:waypoint x="830" y="160" /><di:waypoint x="895" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Router_To_HITL" bpmnElement="Flow_Router_To_HITL">
-        <di:waypoint x="945" y="160" />
-        <di:waypoint x="1010" y="160" />
+        <di:waypoint x="945" y="160" /><di:waypoint x="1010" y="160" />
       </bpmndi:BPMNEdge>
 
-      <bpmndi:BPMNEdge id="E_Flow_Router_To_LowBatch" bpmnElement="Flow_Router_To_LowBatch">
-        <di:waypoint x="945" y="160" />
-        <di:waypoint x="1028" y="160" />
-        <di:waypoint x="1028" y="280" />
-      </bpmndi:BPMNEdge>
-
+      <!-- Medium signoff edges -->
       <bpmndi:BPMNEdge id="E_Flow_HITL_To_BuildAudit" bpmnElement="Flow_HITL_To_BuildAudit">
-        <di:waypoint x="1130" y="160" />
-        <di:waypoint x="1190" y="160" />
+        <di:waypoint x="1130" y="160" /><di:waypoint x="1190" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_BuildAudit_To_AuditWrite" bpmnElement="Flow_BuildAudit_To_AuditWrite">
-        <di:waypoint x="1310" y="160" />
-        <di:waypoint x="1370" y="160" />
+        <di:waypoint x="1310" y="160" /><di:waypoint x="1370" y="160" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_AuditWrite_To_End" bpmnElement="Flow_AuditWrite_To_End">
-        <di:waypoint x="1490" y="160" />
-        <di:waypoint x="1552" y="160" />
+        <di:waypoint x="1490" y="160" /><di:waypoint x="1552" y="160" />
       </bpmndi:BPMNEdge>
 
       <!-- High-risk branch edges -->
       <bpmndi:BPMNEdge id="E_Flow_Router_To_HighChallenger" bpmnElement="Flow_Router_To_HighChallenger">
-        <di:waypoint x="920" y="185" />
-        <di:waypoint x="920" y="460" />
-        <di:waypoint x="860" y="460" />
+        <di:waypoint x="920" y="185" /><di:waypoint x="920" y="460" /><di:waypoint x="860" y="460" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Challenger_To_ChallengerGate" bpmnElement="Flow_Challenger_To_ChallengerGate">
-        <di:waypoint x="980" y="460" />
-        <di:waypoint x="1040" y="460" />
+        <di:waypoint x="980" y="460" /><di:waypoint x="1040" y="460" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_ChallengerGate_To_HighHITL" bpmnElement="Flow_ChallengerGate_To_HighHITL">
-        <di:waypoint x="1160" y="460" />
-        <di:waypoint x="1220" y="460" />
+        <di:waypoint x="1160" y="460" /><di:waypoint x="1220" y="460" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_HighHITL_To_Guard" bpmnElement="Flow_HighHITL_To_Guard">
-        <di:waypoint x="1340" y="460" />
-        <di:waypoint x="1400" y="460" />
+        <di:waypoint x="1340" y="460" /><di:waypoint x="1400" y="460" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_Guard_To_BuildHighAudit" bpmnElement="Flow_Guard_To_BuildHighAudit">
-        <di:waypoint x="1520" y="460" />
-        <di:waypoint x="1580" y="460" />
+        <di:waypoint x="1520" y="460" /><di:waypoint x="1580" y="460" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_BuildHighAudit_To_HighAuditWrite" bpmnElement="Flow_BuildHighAudit_To_HighAuditWrite">
-        <di:waypoint x="1700" y="460" />
-        <di:waypoint x="1760" y="460" />
+        <di:waypoint x="1700" y="460" /><di:waypoint x="1760" y="460" />
       </bpmndi:BPMNEdge>
 
       <bpmndi:BPMNEdge id="E_Flow_HighAuditWrite_To_End" bpmnElement="Flow_HighAuditWrite_To_End">
-        <di:waypoint x="1880" y="460" />
-        <di:waypoint x="1942" y="460" />
+        <di:waypoint x="1880" y="460" /><di:waypoint x="1942" y="460" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Low-batch branch edges -->
+      <bpmndi:BPMNEdge id="E_Flow_Router_To_LowBatch" bpmnElement="Flow_Router_To_LowBatch">
+        <di:waypoint x="920" y="185" /><di:waypoint x="920" y="720" /><di:waypoint x="940" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_BuildBatchParams_To_BatchPartition" bpmnElement="Flow_BuildBatchParams_To_BatchPartition">
+        <di:waypoint x="1060" y="720" /><di:waypoint x="1120" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_BatchPartition_To_ExtractBatch" bpmnElement="Flow_BatchPartition_To_ExtractBatch">
+        <di:waypoint x="1240" y="720" /><di:waypoint x="1300" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ExtractBatch_To_InitLoop" bpmnElement="Flow_ExtractBatch_To_InitLoop">
+        <di:waypoint x="1420" y="720" /><di:waypoint x="1480" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_InitLoop_To_ReviewGateway" bpmnElement="Flow_InitLoop_To_ReviewGateway">
+        <di:waypoint x="1600" y="720" /><di:waypoint x="1660" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ReviewLoop_To_PrepareItem" bpmnElement="Flow_ReviewLoop_To_PrepareItem">
+        <di:waypoint x="1685" y="745" /><di:waypoint x="1685" y="850" /><di:waypoint x="1680" y="850" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_PrepareItem_To_IndividualReview" bpmnElement="Flow_PrepareItem_To_IndividualReview">
+        <di:waypoint x="1740" y="890" /><di:waypoint x="1800" y="890" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_IndividualReview_To_ProcessOutcome" bpmnElement="Flow_IndividualReview_To_ProcessOutcome">
+        <di:waypoint x="1920" y="890" /><di:waypoint x="1980" y="890" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ProcessOutcome_To_ReviewGateway" bpmnElement="Flow_ProcessOutcome_To_ReviewGateway">
+        <di:waypoint x="2100" y="890" /><di:waypoint x="2130" y="890" /><di:waypoint x="2130" y="960" /><di:waypoint x="1685" y="960" /><di:waypoint x="1685" y="745" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ReviewLoop_To_Signoff" bpmnElement="Flow_ReviewLoop_To_Signoff">
+        <di:waypoint x="1710" y="720" /><di:waypoint x="1780" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_Signoff_To_ExtractSignoff" bpmnElement="Flow_Signoff_To_ExtractSignoff">
+        <di:waypoint x="1900" y="720" /><di:waypoint x="1960" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_ExtractSignoff_To_SignoffGateway" bpmnElement="Flow_ExtractSignoff_To_SignoffGateway">
+        <di:waypoint x="2080" y="720" /><di:waypoint x="2140" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_SignoffApprove" bpmnElement="Flow_SignoffApprove">
+        <di:waypoint x="2190" y="720" /><di:waypoint x="2260" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_SignoffReject" bpmnElement="Flow_SignoffReject">
+        <di:waypoint x="2165" y="745" /><di:waypoint x="2165" y="820" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_BuildBatchAudit_To_BatchAuditWrite" bpmnElement="Flow_BuildBatchAudit_To_BatchAuditWrite">
+        <di:waypoint x="2380" y="720" /><di:waypoint x="2440" y="720" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="E_Flow_BatchAuditWrite_To_End" bpmnElement="Flow_BatchAuditWrite_To_End">
+        <di:waypoint x="2560" y="720" /><di:waypoint x="2622" y="720" />
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

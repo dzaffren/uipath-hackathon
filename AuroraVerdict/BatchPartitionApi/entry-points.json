@@ -1,0 +1,33 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+  "$id": "entry-points.json",
+  "entryPoints": [
+    {
+      "filePath": "/content/BatchPartition.json",
+      "uniqueId": "d4e5f6a7-b8c9-4123-def0-234567890123",
+      "type": "api",
+      "input": {
+        "type": "object",
+        "properties": {
+          "batchReference":        { "type": "string" },
+          "batchDate":             { "type": "string" },
+          "sampleRatePct":         { "type": "number" },
+          "highValueThresholdMYR": { "type": "number" },
+          "signerName":            { "type": "string" }
+        },
+        "required": ["batchReference", "sampleRatePct", "highValueThresholdMYR", "signerName"]
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "batchReference":  { "type": "string" },
+          "batchSignoffId":  { "type": "string" },
+          "stats":           { "type": "object" },
+          "pulled":          { "type": "array" },
+          "bulk":            { "type": "array" }
+        }
+      },
+      "displayName": "Run"
+    }
+  ]
+}
