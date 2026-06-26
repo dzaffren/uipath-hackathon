@@ -1,0 +1,5 @@
+{
+  "ProjectType": "Api",
+  "Name": "BatchPartitionApi",
+  "Description": "Aurora Verdict batch-partition API workflow — partitions the day's low-risk alerts into sampled/high-value pulled items and bulk remainder, creates BatchSignoff record. Part of the AuroraVerdict solution."
+}
