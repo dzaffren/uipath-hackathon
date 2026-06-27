@@ -46,6 +46,8 @@
   .hero .lead{font-size:46px;font-weight:600;color:var(--soft);letter-spacing:-1px;margin-top:14px}
   .hero .lead b{color:var(--orange);font-weight:700}
   .hero .sub{font-size:21px;color:var(--muted);margin-top:30px;max-width:760px;line-height:1.5}
+  .hero .aurora{font-size:16px;color:var(--teal-dim);margin-top:18px;letter-spacing:.01em}
+  .hero .aurora b{color:var(--teal);font-weight:700}
   .hero .repo{position:absolute;left:84px;bottom:60px;font-size:15px;color:var(--muted);letter-spacing:.02em}
   .hero .repo b{color:var(--teal);font-weight:600}
   .hero .sqh{right:90px;bottom:96px}
@@ -127,6 +129,7 @@
   .close .sqh .c{left:0;bottom:36px;background:var(--teal)}
 
   @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
     html,body{background:#fff}
     .bar{display:none}
     .stage{padding:0;gap:0}
@@ -150,6 +153,7 @@
         <h1>Aurora Verdict</h1>
         <div class="lead">Defensible <b>AML alert triage.</b></div>
         <p class="sub">Every escalate-or-close decision — cited, verified, and audit-ready by construction.</p>
+        <p class="aurora">Inspired by the BIS Innovation Hub's <b>Project Aurora</b> (AML) research.</p>
       </div>
       <div class="sq sqh"><i class="a"></i><i class="b"></i><i class="c"></i></div>
       <div class="repo"><b>github.com/dzaffren/uipath-hackathon</b></div>
