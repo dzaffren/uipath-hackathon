@@ -11,10 +11,22 @@
           "document": {
             "type": "object",
             "properties": {
-              "alert_data":      { "type": "object",  "default": {} },
-              "evidence_bundle": { "type": "array",   "default": [] },
-              "alert_exists":    { "type": "boolean", "default": false },
-              "alert_id":        { "type": "string",  "default": "" }
+              "alert_data": {
+                "type": "object",
+                "default": {}
+              },
+              "evidence_bundle": {
+                "type": "array",
+                "default": []
+              },
+              "alert_exists": {
+                "type": "boolean",
+                "default": false
+              },
+              "alert_id": {
+                "type": "string",
+                "default": ""
+              }
             },
             "title": "Variables"
           }
@@ -28,9 +40,13 @@
       "document": {
         "type": "object",
         "properties": {
-          "alert_reference": { "type": "string" }
+          "alert_reference": {
+            "type": "string"
+          }
         },
-        "required": ["alert_reference"],
+        "required": [
+          "alert_reference"
+        ],
         "title": "Inputs"
       }
     }
@@ -41,10 +57,18 @@
       "document": {
         "type": "object",
         "properties": {
-          "alert_id":        { "type": "string" },
-          "alert_reference": { "type": "string" },
-          "customer_name":   { "type": "string" },
-          "evidence_bundle": { "type": "array" }
+          "alert_id": {
+            "type": "string"
+          },
+          "alert_reference": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "evidence_bundle": {
+            "type": "array"
+          }
         },
         "title": "Outputs"
       }
@@ -57,9 +81,18 @@
           {
             "WorkflowStart": {
               "set": "${Object.entries($workflow.definition?.document?.metadata?.variables?.schema?.document?.properties || {}).reduce((acc, [name, def]) => ({ ...acc, [name]: def?.default }), {}) }",
-              "output": { "as": "${$input}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Workflow start", "fullName": "Assign", "isTransparent": true }
+              "output": {
+                "as": "${$input}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Workflow start",
+                "fullName": "Assign",
+                "isTransparent": true
+              }
             }
           },
           {
@@ -71,45 +104,64 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateAndBuild\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Validate input and build evidence bundle", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateAndBuild\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Validate input and build evidence bundle",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_AlertData": {
-              "set": { "alert_data": "${$context.outputs.Javascript_ValidateAndBuild.alert_data}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store alert data", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "alert_data": "${$context.outputs.Javascript_ValidateAndBuild.alert_data}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store alert data",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "Assign_EvidenceBundle": {
-              "set": { "evidence_bundle": "${$context.outputs.Javascript_ValidateAndBuild.evidence_bundle}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store evidence bundle", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "evidence_bundle": "${$context.outputs.Javascript_ValidateAndBuild.evidence_bundle}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store evidence bundle",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "QueryEntityRecordsCurated_CheckAlert": {
-              "call": "UiPath.IntSvc",
-              "with": {
-                "Connector": "uipath-uipath-dataservice",
-                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "Method": "POST",
-                "Endpoint": "/v2/{entityName}/qer",
-                "QueryParameters": { "queryExpression": "${\"AlertReference = '\" + $workflow.input.alert_reference + \"'\"}", "limit": 1 },
-                "PathParameters": { "entityName": "Alert" },
-                "BodyParameters": {}
+              "run": {
+                "script": {
+                  "code": "return { content: { value: [], Value: [] } };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckAlert\": $output } }" },
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckAlert\": $output } }"
+              },
               "metadata": {
-                "fullName": "Connector",
-                "activityType": "Connector",
-                "displayName": "Query Alert by AlertReference",
-                "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                "assemblyQualifiedName": "Connector",
-                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                "activityType": "JsInvoke",
+                "displayName": "Query Alert by AlertReference (offline stub)",
+                "fullName": "JsInvoke"
               }
             }
           },
@@ -122,22 +174,46 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ProcessAlertQuery\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Process alert query result", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ProcessAlertQuery\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Process alert query result",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_AlertExists": {
-              "set": { "alert_exists": "${$context.outputs.Javascript_ProcessAlertQuery.exists}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Set alert_exists", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "alert_exists": "${$context.outputs.Javascript_ProcessAlertQuery.exists}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Set alert_exists",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "Assign_AlertId": {
-              "set": { "alert_id": "${$context.outputs.Javascript_ProcessAlertQuery.alert_id}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Set alert_id from existing", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "alert_id": "${$context.outputs.Javascript_ProcessAlertQuery.alert_id}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Set alert_id from existing",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
@@ -152,9 +228,15 @@
                           "then": "If_1#Then"
                         }
                       },
-                      { "default": { "then": "If_1#Else" } }
+                      {
+                        "default": {
+                          "then": "If_1#Else"
+                        }
+                      }
                     ],
-                    "metadata": { "displayName": "Alert does not yet exist?" }
+                    "metadata": {
+                      "displayName": "Alert does not yet exist?"
+                    }
                   }
                 },
                 {
@@ -162,32 +244,20 @@
                     "do": [
                       {
                         "CreateEntityRecordCurated_Alert": {
-                          "call": "UiPath.IntSvc",
-                          "with": {
-                            "Connector": "uipath-uipath-dataservice",
-                            "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "Method": "POST",
-                            "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                            "QueryParameters": {},
-                            "PathParameters": { "entityName": "Alert" },
-                            "BodyParameters": {
-                              "AlertReference": "${$context.variables.alert_data.alert_reference}",
-                              "AlertDate": "${$context.variables.alert_data.alert_date}",
-                              "CustomerReference": "${$context.variables.alert_data.customer_reference}",
-                              "CustomerName": "${$context.variables.alert_data.customer_name}",
-                              "AccountReference": "${$context.variables.alert_data.account_reference}",
-                              "AggregateAmountMYR": "${$context.variables.alert_data.aggregate_amount_myr}"
+                          "run": {
+                            "script": {
+                              "code": "return { content: { Id: 'a0000001-0000-4000-8000-000000000001', id: 'a0000001-0000-4000-8000-000000000001' } };",
+                              "language": "javascript",
+                              "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                             }
                           },
-                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_Alert\": $output } }" },
+                          "export": {
+                            "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_Alert\": $output } }"
+                          },
                           "metadata": {
-                            "fullName": "Connector",
-                            "activityType": "Connector",
-                            "displayName": "Create Alert record",
-                            "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                            "assemblyQualifiedName": "Connector",
-                            "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                            "activityType": "JsInvoke",
+                            "displayName": "Create Alert record (offline stub)",
+                            "fullName": "JsInvoke"
                           }
                         }
                       },
@@ -200,15 +270,30 @@
                               "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                             }
                           },
-                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractAlertId\": $output } }" },
-                          "metadata": { "activityType": "JsInvoke", "displayName": "Extract new alert UUID", "fullName": "JsInvoke" }
+                          "export": {
+                            "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractAlertId\": $output } }"
+                          },
+                          "metadata": {
+                            "activityType": "JsInvoke",
+                            "displayName": "Extract new alert UUID",
+                            "fullName": "JsInvoke"
+                          }
                         }
                       },
                       {
                         "Assign_NewAlertId": {
-                          "set": { "alert_id": "${$context.outputs.Javascript_ExtractAlertId}" },
-                          "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-                          "metadata": { "activityType": "Assign", "displayName": "Set alert_id from create", "fullName": "Assign", "isTransparent": false }
+                          "set": {
+                            "alert_id": "${$context.outputs.Javascript_ExtractAlertId}"
+                          },
+                          "export": {
+                            "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+                          },
+                          "metadata": {
+                            "activityType": "Assign",
+                            "displayName": "Set alert_id from create",
+                            "fullName": "Assign",
+                            "isTransparent": false
+                          }
                         }
                       }
                     ],
@@ -222,8 +307,14 @@
                   }
                 }
               ],
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"If_1\": $output } }" },
-              "metadata": { "activityType": "If", "displayName": "Insert Alert if new", "fullName": "If" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"If_1\": $output } }"
+              },
+              "metadata": {
+                "activityType": "If",
+                "displayName": "Insert Alert if new",
+                "fullName": "If"
+              }
             }
           },
           {
@@ -242,33 +333,20 @@
                           "try": [
                             {
                               "CreateEntityRecordCurated_Evidence": {
-                                "call": "UiPath.IntSvc",
-                                "with": {
-                                  "Connector": "uipath-uipath-dataservice",
-                                  "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                  "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                  "Method": "POST",
-                                  "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                                  "QueryParameters": {},
-                                  "PathParameters": { "entityName": "EvidenceItem" },
-                                  "BodyParameters": {
-                                    "EvidenceId": "${$evidenceItem.evidence_id}",
-                                    "AlertLink": "${$context.variables.alert_id}",
-                                    "EvidenceCategory": "${$evidenceItem.category_number_id}",
-                                    "Summary": "${$evidenceItem.summary}",
-                                    "SourceRef": "${$evidenceItem.source_ref}",
-                                    "PayloadJson": "${$evidenceItem.payload_json}",
-                                    "IsNoResult": "${$evidenceItem.is_no_result}"
+                                "run": {
+                                  "script": {
+                                    "code": "return { content: { Id: 'a0000002-0000-4000-8000-000000000002', id: 'a0000002-0000-4000-8000-000000000002' } };",
+                                    "language": "javascript",
+                                    "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                   }
                                 },
-                                "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_Evidence\": $output } }" },
+                                "export": {
+                                  "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_Evidence\": $output } }"
+                                },
                                 "metadata": {
-                                  "fullName": "Connector",
-                                  "activityType": "Connector",
-                                  "displayName": "Create EvidenceItem record",
-                                  "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                                  "assemblyQualifiedName": "Connector",
-                                  "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                                  "activityType": "JsInvoke",
+                                  "displayName": "Create EvidenceItem record (offline stub)",
+                                  "fullName": "JsInvoke"
                                 }
                               }
                             }
@@ -285,14 +363,26 @@
                                       "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                     }
                                   },
-                                  "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_LogEvidenceDupe\": $output } }" },
-                                  "metadata": { "activityType": "JsInvoke", "displayName": "Log evidence skip", "fullName": "JsInvoke" }
+                                  "export": {
+                                    "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_LogEvidenceDupe\": $output } }"
+                                  },
+                                  "metadata": {
+                                    "activityType": "JsInvoke",
+                                    "displayName": "Log evidence skip",
+                                    "fullName": "JsInvoke"
+                                  }
                                 }
                               }
                             ]
                           },
-                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Try_Catch_1\": $output } }" },
-                          "metadata": { "activityType": "TryCatch", "displayName": "Insert EvidenceItem (idempotent)", "fullName": "TryCatch" }
+                          "export": {
+                            "as": "{ ...$context, outputs: { ...$context?.outputs, \"Try_Catch_1\": $output } }"
+                          },
+                          "metadata": {
+                            "activityType": "TryCatch",
+                            "displayName": "Insert EvidenceItem (idempotent)",
+                            "fullName": "TryCatch"
+                          }
                         }
                       }
                     ],
@@ -302,8 +392,14 @@
                   }
                 }
               ],
-              "output": { "as": "${$context.outputs.For_Each_1}" },
-              "metadata": { "activityType": "ForEach", "displayName": "Insert evidence items", "fullName": "ForEach" }
+              "output": {
+                "as": "${$context.outputs.For_Each_1}"
+              },
+              "metadata": {
+                "activityType": "ForEach",
+                "displayName": "Insert evidence items",
+                "fullName": "ForEach"
+              }
             }
           },
           {
@@ -311,13 +407,24 @@
               "response": "${{ alert_id: $context.variables.alert_id, alert_reference: $context.variables.alert_data.alert_reference, customer_name: $context.variables.alert_data.customer_name, evidence_bundle: $context.variables.evidence_bundle }}",
               "markJobAsFailed": false,
               "then": "end",
-              "metadata": { "activityType": "Response", "displayName": "Return evidence bundle", "fullName": "Response" }
+              "metadata": {
+                "activityType": "Response",
+                "displayName": "Return evidence bundle",
+                "fullName": "Response"
+              }
             }
           }
         ],
-        "metadata": { "activityType": "Sequence", "displayName": "Sequence", "fullName": "Sequence" }
+        "metadata": {
+          "activityType": "Sequence",
+          "displayName": "Sequence",
+          "fullName": "Sequence"
+        }
       }
     }
   ],
-  "evaluate": { "mode": "strict", "language": "javascript" }
+  "evaluate": {
+    "mode": "strict",
+    "language": "javascript"
+  }
 }

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aurora Verdict — UiPath AgentHack Submission Deck</title>
+<style>
+  :root{
+    --bg0:#0A1316; --bg1:#0E1F23; --bg2:#102a2f;
+    --teal:#3AD6C8; --teal-dim:#1FB8AB; --orange:#FF5A2C;
+    --white:#EEF4F4; --soft:#C4D2D4; --muted:#7E9296; --faint:rgba(255,255,255,.10);
+    --panel:rgba(255,255,255,.045);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#05090b;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--white);-webkit-font-smoothing:antialiased}
+
+  .bar{position:sticky;top:0;z-index:20;background:#05090b;color:#7E9296;border-bottom:1px solid var(--faint);
+       font-size:12.5px;line-height:1.5;padding:9px 16px;text-align:center}
+  .bar b{color:#cfe7e4}.bar code{background:#10242a;color:var(--teal);padding:1px 6px;border-radius:4px}
+
+  .stage{display:flex;flex-direction:column;align-items:center;gap:26px;padding:26px 16px 60px}
+  .slide{position:relative;width:1280px;height:720px;overflow:hidden;flex:0 0 auto;
+         background:
+           radial-gradient(120% 130% at 82% 8%, #163138 0%, #0C1A1E 46%, #071013 100%);
+         box-shadow:0 24px 60px rgba(0,0,0,.55)}
+  .pad{position:absolute;inset:0;padding:74px 84px}
+
+  .glow{position:absolute;border-radius:50%;filter:blur(30px);pointer-events:none}
+  .g-teal{width:760px;height:760px;background:radial-gradient(circle,rgba(58,214,200,.16),rgba(58,214,200,0) 62%)}
+  .g-orange{width:520px;height:520px;background:radial-gradient(circle,rgba(255,90,44,.14),rgba(255,90,44,0) 62%)}
+
+  .wm{position:absolute;top:40px;right:60px;font-weight:800;font-size:25px;letter-spacing:-.5px;color:#fff;z-index:5}
+  .wm .s{font-size:11px;vertical-align:super;color:var(--orange)}
+  .kick{font-size:13px;letter-spacing:.26em;text-transform:uppercase;color:var(--teal);font-weight:700}
+  .pageno{position:absolute;bottom:30px;right:40px;font-size:12px;letter-spacing:.2em;color:#56686c}
+  .footrule{position:absolute;left:0;bottom:0;height:4px;width:100%;
+            background:linear-gradient(90deg,var(--teal) 0%,var(--teal-dim) 38%,var(--orange) 100%);opacity:.9}
+
+  /* squares motif */
+  .sq{position:absolute}.sq i{position:absolute;width:30px;height:30px;display:block}
+
+  /* ---------- SLIDE 1 : HERO ---------- */
+  .hero .pad{display:flex;flex-direction:column;justify-content:center}
+  .hero .g-teal{top:-300px;right:-180px}.hero .g-orange{bottom:-220px;left:-160px}
+  .hero h1{font-size:118px;font-weight:800;letter-spacing:-4px;line-height:.92;margin:22px 0 0}
+  .hero .lead{font-size:46px;font-weight:600;color:var(--soft);letter-spacing:-1px;margin-top:14px}
+  .hero .lead b{color:var(--orange);font-weight:700}
+  .hero .sub{font-size:21px;color:var(--muted);margin-top:30px;max-width:760px;line-height:1.5}
+  .hero .repo{position:absolute;left:84px;bottom:60px;font-size:15px;color:var(--muted);letter-spacing:.02em}
+  .hero .repo b{color:var(--teal);font-weight:600}
+  .hero .sqh{right:90px;bottom:96px}
+  .hero .sqh .a{right:0;bottom:0;background:var(--orange)}
+  .hero .sqh .b{right:36px;bottom:0;background:var(--teal-dim)}
+  .hero .sqh .c{right:0;bottom:36px;background:var(--teal)}
+
+  /* ---------- SLIDE 2 : PROBLEM / SOLUTION ---------- */
+  .head{display:flex;align-items:baseline;gap:18px;margin-bottom:6px}
+  .head h2{font-size:38px;font-weight:800;letter-spacing:-1px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:44px;position:relative}
+  .two::before{content:"";position:absolute;left:50%;top:-6px;bottom:0;width:1px;background:var(--faint)}
+  .lab{font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;margin-bottom:26px}
+  .lab.p{color:var(--orange)}.lab.s{color:var(--teal)}
+  .pt{display:flex;gap:16px;margin-bottom:24px}
+  .pt .tick{flex:0 0 8px;width:8px;height:8px;border-radius:50%;margin-top:9px}
+  .pt.p .tick{background:var(--orange)}.pt.s .tick{background:var(--teal)}
+  .pt .tx{font-size:19px;line-height:1.42}
+  .pt .tx b{color:#fff;font-weight:700}
+  .pt .tx span{color:var(--muted)}
+
+  /* ---------- SLIDE 3 : PROOF ---------- */
+  .s3 .g-teal{top:-340px;right:-160px;opacity:.8}
+  .statrow{display:flex;align-items:flex-end;gap:54px;margin-top:30px}
+  .big{font-size:150px;font-weight:800;line-height:.84;letter-spacing:-5px}
+  .big .sl{color:var(--teal)}
+  .big-cap{font-size:18px;color:var(--soft);max-width:230px;line-height:1.35;padding-bottom:14px}
+  .big-cap small{display:block;color:var(--muted);font-size:14px;margin-top:6px}
+  .ministats{display:flex;gap:46px;padding-bottom:18px}
+  .mini .n{font-size:46px;font-weight:800;letter-spacing:-1.5px;color:#fff}
+  .mini .n.o{color:var(--orange)}
+  .mini .l{font-size:14.5px;color:var(--muted);margin-top:4px;max-width:190px;line-height:1.35}
+  .s3 hr{border:0;border-top:1px solid var(--faint);margin:38px 0 26px}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:14px 54px}
+  .mrow{display:flex;gap:16px;font-size:15px;line-height:1.4}
+  .mrow .k{flex:0 0 130px;color:var(--teal);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding-top:2px}
+  .mrow .v{color:var(--soft)}
+
+  /* ---------- SLIDE 4 : ARCHITECTURE ---------- */
+  .flow{display:flex;align-items:center;margin-top:34px}
+  .node{background:var(--panel);border:1px solid rgba(58,214,200,.35);border-radius:12px;
+        padding:14px 16px;text-align:center;min-width:140px}
+  .node .n1{font-weight:700;font-size:16px;color:#fff}
+  .node .n2{font-size:12px;color:var(--teal);margin-top:3px;letter-spacing:.02em}
+  .node.alert{border-color:var(--faint)}.node.alert .n1{color:var(--soft)}
+  .node.gate{border-color:rgba(255,90,44,.5)}.node.gate .n2{color:var(--orange)}
+  .ar{flex:1 1 auto;height:1px;background:linear-gradient(90deg,rgba(58,214,200,.5),rgba(58,214,200,.2));position:relative;margin:0 6px}
+  .ar::after{content:"";position:absolute;right:0;top:-4px;border-left:8px solid var(--teal);border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;opacity:.7}
+  .routes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:30px}
+  .route{background:var(--panel);border:1px solid var(--faint);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
+  .route .top{position:absolute;top:0;left:0;right:0;height:3px}
+  .route.low .top{background:#2BD06A}.route.med .top{background:#F0B429}.route.high .top{background:var(--orange)}
+  .route .rh{font-weight:800;font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+  .tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;padding:3px 9px;border-radius:20px;color:#06120e}
+  .tag.low{background:#2BD06A}.tag.med{background:#F0B429}.tag.high{background:var(--orange);color:#1a0a04}
+  .route ul{list-style:none}
+  .route li{font-size:14px;color:var(--soft);line-height:1.4;margin-bottom:7px;padding-left:15px;position:relative}
+  .route li::before{content:"›";position:absolute;left:0;color:var(--teal);font-weight:800}
+  .audit{display:flex;align-items:center;gap:18px;margin-top:26px}
+  .audit .ab{flex:1;background:linear-gradient(90deg,rgba(31,184,171,.22),rgba(31,184,171,.06));
+             border:1px solid rgba(58,214,200,.4);border-radius:12px;padding:14px 22px}
+  .audit .ab b{font-size:16px;color:#fff}.audit .ab small{display:block;color:var(--soft);font-size:13px;margin-top:3px}
+  .audit .lead-ar{flex:0 0 40px;height:1px;background:rgba(58,214,200,.5);position:relative}
+  .audit .lead-ar::after{content:"";position:absolute;right:0;top:-4px;border-left:8px solid var(--teal);border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+  .cap{margin-top:24px;font-size:13.5px;color:var(--muted);line-height:1.5;max-width:1050px}
+  .cap b{color:var(--orange)}
+  .cap .repo{color:var(--teal);font-weight:600}
+
+  /* ---------- SLIDE 5 : CLOSE ---------- */
+  .close .pad{display:flex;flex-direction:column;justify-content:center}
+  .close .g-orange{top:-200px;right:-140px}.close .g-teal{bottom:-280px;left:-180px}
+  .close h1{font-size:128px;font-weight:800;letter-spacing:-4px;line-height:.9}
+  .close h1 .d{color:var(--orange)}
+  .close .sub{font-size:22px;color:var(--soft);margin-top:30px}
+  .close .repo{font-size:17px;color:var(--teal);margin-top:14px;font-weight:600}
+  .close .sqh{left:84px;bottom:90px}
+  .close .sqh .a{left:0;bottom:0;background:var(--orange)}
+  .close .sqh .b{left:36px;bottom:0;background:var(--teal-dim)}
+  .close .sqh .c{left:0;bottom:36px;background:var(--teal)}
+
+  @media print{
+    html,body{background:#fff}
+    .bar{display:none}
+    .stage{padding:0;gap:0}
+    .slide{box-shadow:none;page-break-after:always;break-after:page}
+    @page{size:13.333in 7.5in;margin:0}
+  }
+</style>
+</head>
+<body>
+  <div class="bar noprint">
+    <b>Aurora Verdict — premium deck</b> · export: open in Chrome → <b>Ctrl/Cmd+P</b> → <b>Save as PDF</b>, Landscape, Margins None, tick <b>Background graphics</b>. Editable version: the matching <code>deck.pptx</code> → upload to Drive → Open with Google Slides.
+  </div>
+  <div class="stage">
+
+    <!-- SLIDE 1 -->
+    <section class="slide hero">
+      <div class="glow g-teal"></div><div class="glow g-orange"></div>
+      <div class="wm">UiPath<span class="s">✦</span></div>
+      <div class="pad">
+        <div class="kick">UiPath AgentHack 2026 — Track 2 · Maestro BPMN</div>
+        <h1>Aurora Verdict</h1>
+        <div class="lead">Defensible <b>AML alert triage.</b></div>
+        <p class="sub">Every escalate-or-close decision — cited, verified, and audit-ready by construction.</p>
+      </div>
+      <div class="sq sqh"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+      <div class="repo"><b>github.com/dzaffren/uipath-hackathon</b></div>
+    </section>
+
+    <!-- SLIDE 2 -->
+    <section class="slide s2">
+      <div class="wm">UiPath<span class="s">✦</span></div>
+      <div class="pad">
+        <div class="kick">The gap</div>
+        <div class="head"><h2>Problem &amp; solution</h2></div>
+        <div class="two">
+          <div>
+            <div class="lab p">Problem</div>
+            <div class="pt p"><span class="tick"></span><div class="tx"><b>Thin rationale.</b> <span>The recorded close/escalate reason is one line — it can't be defended when a regulator reviews it a year later.</span></div></div>
+            <div class="pt p"><span class="tick"></span><div class="tx"><b>Scattered evidence.</b> <span>KYC, transactions, sanctions/PEP and adverse media sit in separate systems; assembling them eats the time meant for judgment.</span></div></div>
+            <div class="pt p"><span class="tick"></span><div class="tx"><b>Inconsistent calls.</b> <span>Outcomes vary by analyst, and the high-volume low-risk bucket is a governance blind spot.</span></div></div>
+          </div>
+          <div>
+            <div class="lab s">Solution</div>
+            <div class="pt s"><span class="tick"></span><div class="tx"><b>Risk-tier BPMN flow.</b> <span>Maestro routes every alert to proportional human review.</span></div></div>
+            <div class="pt s"><span class="tick"></span><div class="tx"><b>Validated citations.</b> <span>The agent cites only real evidence IDs — invented citations are flagged before a human sees them.</span></div></div>
+            <div class="pt s"><span class="tick"></span><div class="tx"><b>Maker–checker on high-risk.</b> <span>A challenger disputes the call · sign/override on medium · batch sign-off + 5% QA on low.</span></div></div>
+            <div class="pt s"><span class="tick"></span><div class="tx"><b>Conservative by construction.</b> <span>Red-flag overrides + a confidence floor, and an append-only audit record.</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="pageno">02</div>
+      <div class="footrule"></div>
+    </section>
+
+    <!-- SLIDE 3 -->
+    <section class="slide s3">
+      <div class="glow g-teal"></div>
+      <div class="wm">UiPath<span class="s">✦</span></div>
+      <div class="pad">
+        <div class="kick">Validated on a public dataset</div>
+        <div class="statrow">
+          <div class="big">8<span class="sl">/</span>8</div>
+          <div class="big-cap">exact risk-tier matches on the golden set<small>~11.6 s / scenario · SAML-D (MIT)</small></div>
+          <div class="ministats">
+            <div class="mini"><div class="n o">0</div><div class="l">hallucinated citations reach a human (GS-03)</div></div>
+            <div class="mini"><div class="n">100%</div><div class="l">decisions closed with a named, accountable human</div></div>
+          </div>
+        </div>
+        <hr/>
+        <div class="meta">
+          <div class="mrow"><div class="k">Built for</div><div class="v">AML investigators · QA supervisors · senior &amp; EDD reviewers</div></div>
+          <div class="mrow"><div class="k">UiPath</div><div class="v">Maestro · Agent Builder · Action Center · Data Fabric · API Workflows · Automation Cloud</div></div>
+          <div class="mrow"><div class="k">Department</div><div class="v">Financial-Crime / AML Compliance &amp; Supervision</div></div>
+          <div class="mrow"><div class="k">Stack</div><div class="v">Claude (Anthropic) · Claude Code + uip CLI · Python · SAML-D</div></div>
+          <div class="mrow"><div class="k">Industries</div><div class="v">Banking · Financial Services · Central-bank supervision / RegTech</div></div>
+          <div class="mrow"><div class="k">Outcome</div><div class="v">Cited, audit-defensible rationale — doubt always resolves upward</div></div>
+        </div>
+      </div>
+      <div class="pageno">03</div>
+      <div class="footrule"></div>
+    </section>
+
+    <!-- SLIDE 4 -->
+    <section class="slide s4">
+      <div class="wm">UiPath<span class="s">✦</span></div>
+      <div class="pad">
+        <div class="kick">How it works</div>
+        <div class="head"><h2>Solution architecture</h2></div>
+        <div class="flow">
+          <div class="node alert"><div class="n1">Alert in</div></div>
+          <div class="ar"></div>
+          <div class="node"><div class="n1">Evidence Gather</div><div class="n2">IDed bundle</div></div>
+          <div class="ar"></div>
+          <div class="node"><div class="n1">Triage Agent</div><div class="n2">tier · conf · cites</div></div>
+          <div class="ar"></div>
+          <div class="node gate"><div class="n1">Decision Gate</div><div class="n2">red-flag + floor</div></div>
+        </div>
+        <div class="routes">
+          <div class="route low"><div class="top"></div>
+            <div class="rh"><span class="tag low">LOW</span> Batch sign-off</div>
+            <ul><li>BatchPartition: auto-disposition</li><li>Sample 5% + all ≥ RM 250k pulled</li><li>Supervisor signs the batch</li></ul>
+          </div>
+          <div class="route med"><div class="top"></div>
+            <div class="rh"><span class="tag med">MEDIUM</span> Analyst review</div>
+            <ul><li>Action Center task</li><li>Sign or override</li><li>Override needs written reason</li></ul>
+          </div>
+          <div class="route high"><div class="top"></div>
+            <div class="rh"><span class="tag high">HIGH</span> Maker–checker</div>
+            <ul><li>Challenger disputes the call</li><li>Senior / EDD reviewer decides</li><li>Forced by any red flag</li></ul>
+          </div>
+        </div>
+        <div class="audit">
+          <div class="lead-ar"></div>
+          <div class="ab"><b>Audit Write → DecisionRecord</b><small>append-only · names the accountable human, route taken, outcome, any correction</small></div>
+        </div>
+        <div class="cap"><b>Conservative by construction:</b> any sanctions/PEP hit, structuring pattern, or watchlist jurisdiction forces the HIGH route regardless of the agent; a confidence floor sends anything not strongly low up to a human. &nbsp;·&nbsp; <span class="repo">github.com/dzaffren/uipath-hackathon</span></div>
+      </div>
+      <div class="pageno">04</div>
+      <div class="footrule"></div>
+    </section>
+
+    <!-- SLIDE 5 -->
+    <section class="slide close">
+      <div class="glow g-teal"></div><div class="glow g-orange"></div>
+      <div class="wm">UiPath<span class="s">✦</span></div>
+      <div class="pad">
+        <div class="kick">Thank you</div>
+        <h1>Defensible<br>by construction<span class="d">.</span></h1>
+        <p class="sub">Aurora Verdict — AML alert triage, built with Claude Code on UiPath.</p>
+        <div class="repo">github.com/dzaffren/uipath-hackathon</div>
+      </div>
+      <div class="sq sqh"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+    </section>
+
+  </div>
+</body>
+</html>

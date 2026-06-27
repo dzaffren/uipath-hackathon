@@ -11,9 +11,18 @@
           "document": {
             "type": "object",
             "properties": {
-              "record_exists": { "type": "boolean", "default": false },
-              "decision_record_id": { "type": "string", "default": "" },
-              "triggers_to_insert": { "type": "array", "default": [] }
+              "record_exists": {
+                "type": "boolean",
+                "default": false
+              },
+              "decision_record_id": {
+                "type": "string",
+                "default": ""
+              },
+              "triggers_to_insert": {
+                "type": "array",
+                "default": []
+              }
             },
             "title": "Variables"
           }
@@ -27,24 +36,60 @@
       "document": {
         "type": "object",
         "properties": {
-          "alert_id": { "type": "string" },
-          "final_risk_tier": { "type": "string" },
-          "original_proposed_tier": { "type": "string" },
-          "route_taken": { "type": "string" },
-          "tier_was_forced": { "type": "boolean" },
-          "red_flags": { "type": "array" },
-          "decision_maker_name": { "type": "string" },
-          "human_action": { "type": "string" },
-          "override_reason": { "type": "string" },
-          "decision_timestamp": { "type": "string" },
-          "final_disposition": { "type": "string" },
-          "disposition_timestamp": { "type": "string" },
-          "challenger_outcome": { "type": "string" },
-          "challenger_dispute": { "type": "string" },
-          "reviewer_reason": { "type": "string" },
-          "batch_signoff_id": { "type": "string" },
-          "batch_reference": { "type": "string" },
-          "batch_alerts": { "type": "array" }
+          "alert_id": {
+            "type": "string"
+          },
+          "final_risk_tier": {
+            "type": "string"
+          },
+          "original_proposed_tier": {
+            "type": "string"
+          },
+          "route_taken": {
+            "type": "string"
+          },
+          "tier_was_forced": {
+            "type": "boolean"
+          },
+          "red_flags": {
+            "type": "array"
+          },
+          "decision_maker_name": {
+            "type": "string"
+          },
+          "human_action": {
+            "type": "string"
+          },
+          "override_reason": {
+            "type": "string"
+          },
+          "decision_timestamp": {
+            "type": "string"
+          },
+          "final_disposition": {
+            "type": "string"
+          },
+          "disposition_timestamp": {
+            "type": "string"
+          },
+          "challenger_outcome": {
+            "type": "string"
+          },
+          "challenger_dispute": {
+            "type": "string"
+          },
+          "reviewer_reason": {
+            "type": "string"
+          },
+          "batch_signoff_id": {
+            "type": "string"
+          },
+          "batch_reference": {
+            "type": "string"
+          },
+          "batch_alerts": {
+            "type": "array"
+          }
         },
         "required": [],
         "title": "Inputs"
@@ -57,10 +102,18 @@
       "document": {
         "type": "object",
         "properties": {
-          "decision_record_id": { "type": "string" },
-          "was_existing": { "type": "boolean" },
-          "records_written": { "type": "number" },
-          "records_skipped": { "type": "number" }
+          "decision_record_id": {
+            "type": "string"
+          },
+          "was_existing": {
+            "type": "boolean"
+          },
+          "records_written": {
+            "type": "number"
+          },
+          "records_skipped": {
+            "type": "number"
+          }
         },
         "title": "Outputs"
       }
@@ -73,7 +126,9 @@
           {
             "WorkflowStart": {
               "set": "${Object.entries($workflow.definition?.document?.metadata?.variables?.schema?.document?.properties || {}).reduce((acc, [name, def]) => ({ ...acc, [name]: def?.default }), {}) }",
-              "output": { "as": "${$input}" },
+              "output": {
+                "as": "${$input}"
+              },
               "export": {
                 "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
               },
@@ -97,9 +152,15 @@
                           "then": "If_BatchMode#Then"
                         }
                       },
-                      { "default": { "then": "If_BatchMode#Else" } }
+                      {
+                        "default": {
+                          "then": "If_BatchMode#Else"
+                        }
+                      }
                     ],
-                    "metadata": { "displayName": "Batch or single-alert mode?" }
+                    "metadata": {
+                      "displayName": "Batch or single-alert mode?"
+                    }
                   }
                 },
                 {
@@ -156,32 +217,20 @@
                                   },
                                   {
                                     "QueryEntityRecordsCurated_CheckBatchDecision": {
-                                      "call": "UiPath.IntSvc",
-                                      "with": {
-                                        "Connector": "uipath-uipath-dataservice",
-                                        "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                        "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                        "Method": "POST",
-                                        "Endpoint": "/v2/{entityName}/qer",
-                                        "QueryParameters": {
-                                          "queryExpression": "${\"AlertLink = '\" + $context.outputs.Javascript_MapBatchAlert.alert_id + \"'\"}",
-                                          "limit": 1
-                                        },
-                                        "PathParameters": {
-                                          "entityName": "DecisionRecord"
-                                        },
-                                        "BodyParameters": {}
+                                      "run": {
+                                        "script": {
+                                          "code": "return { content: { value: [], Value: [] } };",
+                                          "language": "javascript",
+                                          "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                                        }
                                       },
                                       "export": {
                                         "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckBatchDecision\": $output } }"
                                       },
                                       "metadata": {
-                                        "fullName": "Connector",
-                                        "activityType": "Connector",
-                                        "displayName": "Query DecisionRecord for batch idempotency",
-                                        "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                                        "assemblyQualifiedName": "Connector",
-                                        "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                                        "activityType": "JsInvoke",
+                                        "displayName": "Query DecisionRecord for batch idempotency (offline stub)",
+                                        "fullName": "JsInvoke"
                                       }
                                     }
                                   },
@@ -232,45 +281,20 @@
                                             "do": [
                                               {
                                                 "CreateEntityRecordCurated_BatchDecisionRecord": {
-                                                  "call": "UiPath.IntSvc",
-                                                  "with": {
-                                                    "Connector": "uipath-uipath-dataservice",
-                                                    "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                                    "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                                    "Method": "POST",
-                                                    "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                                                    "QueryParameters": {},
-                                                    "PathParameters": {
-                                                      "entityName": "DecisionRecord"
-                                                    },
-                                                    "BodyParameters": {
-                                                      "AlertLink": "${$context.outputs.Javascript_MapBatchAlert.alert_id}",
-                                                      "FinalRiskTier": 0,
-                                                      "TierWasForced": false,
-                                                      "OriginalProposedTier": 0,
-                                                      "RouteTaken": 0,
-                                                      "ChallengerOutcome": 0,
-                                                      "ChallengerDispute": "",
-                                                      "DecisionMakerName": "${$workflow.input.decision_maker_name}",
-                                                      "HumanAction": "${$context.outputs.Javascript_MapBatchAlert.human_action_number_id}",
-                                                      "OverrideReason": "${$context.outputs.Javascript_MapBatchAlert.correction_reason}",
-                                                      "DecisionTimestamp": "${$workflow.input.decision_timestamp || ''}",
-                                                      "FinalDisposition": 0,
-                                                      "DispositionTimestamp": "",
-                                                      "WasPulledForReview": "${$context.outputs.Javascript_MapBatchAlert.was_pulled}",
-                                                      "BatchSignoffLink": "${$workflow.input.batch_signoff_id}"
+                                                  "run": {
+                                                    "script": {
+                                                      "code": "return { content: { Id: 'a0000005-0000-4000-8000-000000000005', id: 'a0000005-0000-4000-8000-000000000005' } };",
+                                                      "language": "javascript",
+                                                      "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                                     }
                                                   },
                                                   "export": {
                                                     "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_BatchDecisionRecord\": $output } }"
                                                   },
                                                   "metadata": {
-                                                    "fullName": "Connector",
-                                                    "activityType": "Connector",
-                                                    "displayName": "Create batch DecisionRecord",
-                                                    "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                                                    "assemblyQualifiedName": "Connector",
-                                                    "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                                                    "activityType": "JsInvoke",
+                                                    "displayName": "Create batch DecisionRecord (offline stub)",
+                                                    "fullName": "JsInvoke"
                                                   }
                                                 }
                                               }
@@ -390,32 +414,20 @@
                       },
                       {
                         "QueryEntityRecordsCurated_CheckDecision": {
-                          "call": "UiPath.IntSvc",
-                          "with": {
-                            "Connector": "uipath-uipath-dataservice",
-                            "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "Method": "POST",
-                            "Endpoint": "/v2/{entityName}/qer",
-                            "QueryParameters": {
-                              "queryExpression": "${\"AlertLink = '\" + $workflow.input.alert_id + \"'\"}",
-                              "limit": 1
-                            },
-                            "PathParameters": {
-                              "entityName": "DecisionRecord"
-                            },
-                            "BodyParameters": {}
+                          "run": {
+                            "script": {
+                              "code": "return { content: { value: [], Value: [] } };",
+                              "language": "javascript",
+                              "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                            }
                           },
                           "export": {
                             "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckDecision\": $output } }"
                           },
                           "metadata": {
-                            "fullName": "Connector",
-                            "activityType": "Connector",
-                            "displayName": "Query DecisionRecord for idempotency",
-                            "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                            "assemblyQualifiedName": "Connector",
-                            "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                            "activityType": "JsInvoke",
+                            "displayName": "Query DecisionRecord for idempotency (offline stub)",
+                            "fullName": "JsInvoke"
                           }
                         }
                       },
@@ -482,7 +494,11 @@
                                       "then": "If_3#Then"
                                     }
                                   },
-                                  { "default": { "then": "If_3#Else" } }
+                                  {
+                                    "default": {
+                                      "then": "If_3#Else"
+                                    }
+                                  }
                                 ],
                                 "metadata": {
                                   "displayName": "DecisionRecord does not yet exist?"
@@ -494,44 +510,20 @@
                                 "do": [
                                   {
                                     "CreateEntityRecordCurated_DecisionRecord": {
-                                      "call": "UiPath.IntSvc",
-                                      "with": {
-                                        "Connector": "uipath-uipath-dataservice",
-                                        "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                        "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                        "Method": "POST",
-                                        "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                                        "QueryParameters": {},
-                                        "PathParameters": {
-                                          "entityName": "DecisionRecord"
-                                        },
-                                        "BodyParameters": {
-                                          "AlertLink": "${$workflow.input.alert_id}",
-                                          "FinalRiskTier": "${$context.outputs.Javascript_ValidateInputs.final_risk_tier_number_id}",
-                                          "TierWasForced": "${$context.outputs.Javascript_ValidateInputs.tier_was_forced}",
-                                          "OriginalProposedTier": "${$context.outputs.Javascript_ValidateInputs.original_proposed_tier_number_id}",
-                                          "RouteTaken": "${$context.outputs.Javascript_ValidateInputs.route_taken_number_id}",
-                                          "ChallengerOutcome": "${$context.outputs.Javascript_ValidateInputs.challenger_outcome_number_id}",
-                                          "ChallengerDispute": "${$workflow.input.challenger_dispute || ''}",
-                                          "DecisionMakerName": "${$workflow.input.decision_maker_name}",
-                                          "HumanAction": "${$context.outputs.Javascript_ValidateInputs.human_action_number_id}",
-                                          "OverrideReason": "${$workflow.input.override_reason || ''}",
-                                          "DecisionTimestamp": "${$workflow.input.decision_timestamp || ''}",
-                                          "FinalDisposition": "${$context.outputs.Javascript_ValidateInputs.final_disposition_number_id}",
-                                          "DispositionTimestamp": "${$workflow.input.disposition_timestamp || ''}",
-                                          "WasPulledForReview": false
+                                      "run": {
+                                        "script": {
+                                          "code": "return { content: { Id: 'a0000006-0000-4000-8000-000000000006', id: 'a0000006-0000-4000-8000-000000000006' } };",
+                                          "language": "javascript",
+                                          "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                         }
                                       },
                                       "export": {
                                         "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_DecisionRecord\": $output } }"
                                       },
                                       "metadata": {
-                                        "fullName": "Connector",
-                                        "activityType": "Connector",
-                                        "displayName": "Create DecisionRecord",
-                                        "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                                        "assemblyQualifiedName": "Connector",
-                                        "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                                        "activityType": "JsInvoke",
+                                        "displayName": "Create DecisionRecord (offline stub)",
+                                        "fullName": "JsInvoke"
                                       }
                                     }
                                   },
@@ -593,31 +585,20 @@
                       },
                       {
                         "QueryEntityRecordsCurated_ExistingTriggers": {
-                          "call": "UiPath.IntSvc",
-                          "with": {
-                            "Connector": "uipath-uipath-dataservice",
-                            "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "Method": "POST",
-                            "Endpoint": "/v2/{entityName}/qer",
-                            "QueryParameters": {
-                              "queryExpression": "${\"AlertLink = '\" + $workflow.input.alert_id + \"'\"}"
-                            },
-                            "PathParameters": {
-                              "entityName": "RedFlagTrigger"
-                            },
-                            "BodyParameters": {}
+                          "run": {
+                            "script": {
+                              "code": "return { content: { value: [], Value: [] } };",
+                              "language": "javascript",
+                              "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                            }
                           },
                           "export": {
                             "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_ExistingTriggers\": $output } }"
                           },
                           "metadata": {
-                            "fullName": "Connector",
-                            "activityType": "Connector",
-                            "displayName": "Query existing RedFlagTrigger rows",
-                            "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                            "assemblyQualifiedName": "Connector",
-                            "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                            "activityType": "JsInvoke",
+                            "displayName": "Query existing RedFlagTrigger rows (offline stub)",
+                            "fullName": "JsInvoke"
                           }
                         }
                       },
@@ -672,33 +653,20 @@
                                       "try": [
                                         {
                                           "CreateEntityRecordCurated_RedFlagTrigger": {
-                                            "call": "UiPath.IntSvc",
-                                            "with": {
-                                              "Connector": "uipath-uipath-dataservice",
-                                              "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                              "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                              "Method": "POST",
-                                              "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                                              "QueryParameters": {},
-                                              "PathParameters": {
-                                                "entityName": "RedFlagTrigger"
-                                              },
-                                              "BodyParameters": {
-                                                "AlertLink": "${$workflow.input.alert_id}",
-                                                "TriggerKind": "${$triggerItem.kind_number_id}",
-                                                "TriggerDetail": "${$triggerItem.detail}"
+                                            "run": {
+                                              "script": {
+                                                "code": "return { content: { Id: 'a0000007-0000-4000-8000-000000000007', id: 'a0000007-0000-4000-8000-000000000007' } };",
+                                                "language": "javascript",
+                                                "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                               }
                                             },
                                             "export": {
                                               "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_RedFlagTrigger\": $output } }"
                                             },
                                             "metadata": {
-                                              "fullName": "Connector",
-                                              "activityType": "Connector",
-                                              "displayName": "Create RedFlagTrigger record",
-                                              "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                                              "assemblyQualifiedName": "Connector",
-                                              "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                                              "activityType": "JsInvoke",
+                                              "displayName": "Create RedFlagTrigger record (offline stub)",
+                                              "fullName": "JsInvoke"
                                             }
                                           }
                                         }
@@ -790,5 +758,8 @@
       }
     }
   ],
-  "evaluate": { "mode": "strict", "language": "javascript" }
+  "evaluate": {
+    "mode": "strict",
+    "language": "javascript"
+  }
 }

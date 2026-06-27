@@ -20,3 +20,9 @@ AuroraVerdict/golden-inputs/
 
 # Ad-hoc local verification script (not part of the solution or eval flow)
 /verify-detectors.js
+
+# Build output (nested)
+AuroraVerdict/out/
+
+# Abandoned video experiment (separate node project)
+/demo-reel/

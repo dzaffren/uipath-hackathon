@@ -11,9 +11,18 @@
           "document": {
             "type": "object",
             "properties": {
-              "batch_signoff_exists": { "type": "boolean", "default": false },
-              "batch_signoff_id":     { "type": "string",  "default": "" },
-              "partition_result":     { "type": "object",  "default": {} }
+              "batch_signoff_exists": {
+                "type": "boolean",
+                "default": false
+              },
+              "batch_signoff_id": {
+                "type": "string",
+                "default": ""
+              },
+              "partition_result": {
+                "type": "object",
+                "default": {}
+              }
             },
             "title": "Variables"
           }
@@ -27,13 +36,28 @@
       "document": {
         "type": "object",
         "properties": {
-          "batchReference":        { "type": "string" },
-          "batchDate":             { "type": "string" },
-          "sampleRatePct":         { "type": "number" },
-          "highValueThresholdMYR": { "type": "number" },
-          "signerName":            { "type": "string" }
+          "batchReference": {
+            "type": "string"
+          },
+          "batchDate": {
+            "type": "string"
+          },
+          "sampleRatePct": {
+            "type": "number"
+          },
+          "highValueThresholdMYR": {
+            "type": "number"
+          },
+          "signerName": {
+            "type": "string"
+          }
         },
-        "required": ["batchReference", "sampleRatePct", "highValueThresholdMYR", "signerName"],
+        "required": [
+          "batchReference",
+          "sampleRatePct",
+          "highValueThresholdMYR",
+          "signerName"
+        ],
         "title": "Inputs"
       }
     }
@@ -44,11 +68,21 @@
       "document": {
         "type": "object",
         "properties": {
-          "batchReference": { "type": "string" },
-          "batchSignoffId": { "type": "string" },
-          "stats":          { "type": "object" },
-          "pulled":         { "type": "array" },
-          "bulk":           { "type": "array" }
+          "batchReference": {
+            "type": "string"
+          },
+          "batchSignoffId": {
+            "type": "string"
+          },
+          "stats": {
+            "type": "object"
+          },
+          "pulled": {
+            "type": "array"
+          },
+          "bulk": {
+            "type": "array"
+          }
         },
         "title": "Outputs"
       }
@@ -61,9 +95,18 @@
           {
             "WorkflowStart": {
               "set": "${Object.entries($workflow.definition?.document?.metadata?.variables?.schema?.document?.properties || {}).reduce((acc, [name, def]) => ({ ...acc, [name]: def?.default }), {}) }",
-              "output": { "as": "${$input}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Workflow start", "fullName": "Assign", "isTransparent": true }
+              "output": {
+                "as": "${$input}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Workflow start",
+                "fullName": "Assign",
+                "isTransparent": true
+              }
             }
           },
           {
@@ -75,31 +118,32 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateInputs\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Validate inputs", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateInputs\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Validate inputs",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "QueryEntityRecordsCurated_CheckBatchSignoff": {
-              "call": "UiPath.IntSvc",
-              "with": {
-                "Connector": "uipath-uipath-dataservice",
-                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "Method": "POST",
-                "Endpoint": "/v2/{entityName}/qer",
-                "QueryParameters": { "queryExpression": "${\"BatchReference = '\" + $workflow.input.batchReference + \"'\"}", "limit": 1 },
-                "PathParameters": { "entityName": "BatchSignoff" },
-                "BodyParameters": {}
+              "run": {
+                "script": {
+                  "code": "return { content: { value: [], Value: [] } };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckBatchSignoff\": $output } }" },
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_CheckBatchSignoff\": $output } }"
+              },
               "metadata": {
-                "fullName": "Connector",
-                "activityType": "Connector",
-                "displayName": "Check BatchSignoff idempotency",
-                "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                "assemblyQualifiedName": "Connector",
-                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                "activityType": "JsInvoke",
+                "displayName": "Check BatchSignoff idempotency (offline stub)",
+                "fullName": "JsInvoke"
               }
             }
           },
@@ -112,69 +156,83 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ProcessBatchSignoffCheck\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Process BatchSignoff check", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ProcessBatchSignoffCheck\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Process BatchSignoff check",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_BatchSignoffExists": {
-              "set": { "batch_signoff_exists": "${$context.outputs.Javascript_ProcessBatchSignoffCheck.exists}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Set batch_signoff_exists", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "batch_signoff_exists": "${$context.outputs.Javascript_ProcessBatchSignoffCheck.exists}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Set batch_signoff_exists",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "Assign_BatchSignoffIdFromExisting": {
-              "set": { "batch_signoff_id": "${$context.outputs.Javascript_ProcessBatchSignoffCheck.id}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Set batch_signoff_id from existing (if any)", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "batch_signoff_id": "${$context.outputs.Javascript_ProcessBatchSignoffCheck.id}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Set batch_signoff_id from existing (if any)",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "QueryEntityRecordsCurated_GetAlerts": {
-              "call": "UiPath.IntSvc",
-              "with": {
-                "Connector": "uipath-uipath-dataservice",
-                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "Method": "POST",
-                "Endpoint": "/v2/{entityName}/qer",
-                "QueryParameters": { "queryExpression": "${$workflow.input.batchDate ? \"AlertDate = '\" + $workflow.input.batchDate + \"'\" : ''}", "limit": 1000 },
-                "PathParameters": { "entityName": "Alert" },
-                "BodyParameters": {}
+              "run": {
+                "script": {
+                  "code": "return { content: { value: [], Value: [] } };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_GetAlerts\": $output } }" },
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_GetAlerts\": $output } }"
+              },
               "metadata": {
-                "fullName": "Connector",
-                "activityType": "Connector",
-                "displayName": "Query Alert records for batch date",
-                "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                "assemblyQualifiedName": "Connector",
-                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                "activityType": "JsInvoke",
+                "displayName": "Query Alert records for batch date (offline stub)",
+                "fullName": "JsInvoke"
               }
             }
           },
           {
             "QueryEntityRecordsCurated_GetDecisionRecords": {
-              "call": "UiPath.IntSvc",
-              "with": {
-                "Connector": "uipath-uipath-dataservice",
-                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "Method": "POST",
-                "Endpoint": "/v2/{entityName}/qer",
-                "QueryParameters": { "queryExpression": "", "limit": 1000 },
-                "PathParameters": { "entityName": "DecisionRecord" },
-                "BodyParameters": {}
+              "run": {
+                "script": {
+                  "code": "return { content: { value: [], Value: [] } };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
+                }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_GetDecisionRecords\": $output } }" },
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"QueryEntityRecordsCurated_GetDecisionRecords\": $output } }"
+              },
               "metadata": {
-                "fullName": "Connector",
-                "activityType": "Connector",
-                "displayName": "Query all DecisionRecord AlertLink IDs",
-                "uiPathActivityTypeId": "703065b9-a310-33b8-9d4d-12df0a6f520b",
-                "assemblyQualifiedName": "Connector",
-                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"QueryEntityRecordsCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"QueryEntityRecordsCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/qer\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_QueryEntityRecordsCurated\"}}"
+                "activityType": "JsInvoke",
+                "displayName": "Query all DecisionRecord AlertLink IDs (offline stub)",
+                "fullName": "JsInvoke"
               }
             }
           },
@@ -187,15 +245,30 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ComputePartition\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Compute partition (sample + high-value union)", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ComputePartition\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Compute partition (sample + high-value union)",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_PartitionResult": {
-              "set": { "partition_result": "${$context.outputs.Javascript_ComputePartition}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store partition result", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "partition_result": "${$context.outputs.Javascript_ComputePartition}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store partition result",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
@@ -210,9 +283,15 @@
                           "then": "If_BatchSignoffNew#Then"
                         }
                       },
-                      { "default": { "then": "If_BatchSignoffNew#Else" } }
+                      {
+                        "default": {
+                          "then": "If_BatchSignoffNew#Else"
+                        }
+                      }
                     ],
-                    "metadata": { "displayName": "BatchSignoff does not exist yet?" }
+                    "metadata": {
+                      "displayName": "BatchSignoff does not exist yet?"
+                    }
                   }
                 },
                 {
@@ -220,32 +299,20 @@
                     "do": [
                       {
                         "CreateEntityRecordCurated_BatchSignoff": {
-                          "call": "UiPath.IntSvc",
-                          "with": {
-                            "Connector": "uipath-uipath-dataservice",
-                            "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                            "Method": "POST",
-                            "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                            "QueryParameters": {},
-                            "PathParameters": { "entityName": "BatchSignoff" },
-                            "BodyParameters": {
-                              "BatchReference":  "${$workflow.input.batchReference}",
-                              "SignerName":       "${$workflow.input.signerName}",
-                              "AlertCount":       "${$context.variables.partition_result.alertCount}",
-                              "SampleRatePct":    "${$workflow.input.sampleRatePct}",
-                              "SampledCount":     "${$context.variables.partition_result.sampledCount}",
-                              "HighValueCount":   "${$context.variables.partition_result.highValueCount}"
+                          "run": {
+                            "script": {
+                              "code": "return { content: { Id: 'a0000008-0000-4000-8000-000000000008', id: 'a0000008-0000-4000-8000-000000000008' } };",
+                              "language": "javascript",
+                              "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                             }
                           },
-                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_BatchSignoff\": $output } }" },
+                          "export": {
+                            "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_BatchSignoff\": $output } }"
+                          },
                           "metadata": {
-                            "fullName": "Connector",
-                            "activityType": "Connector",
-                            "displayName": "Create BatchSignoff record",
-                            "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                            "assemblyQualifiedName": "Connector",
-                            "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                            "activityType": "JsInvoke",
+                            "displayName": "Create BatchSignoff record (offline stub)",
+                            "fullName": "JsInvoke"
                           }
                         }
                       },
@@ -258,15 +325,30 @@
                               "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                             }
                           },
-                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractBatchSignoffId\": $output } }" },
-                          "metadata": { "activityType": "JsInvoke", "displayName": "Extract BatchSignoff UUID", "fullName": "JsInvoke" }
+                          "export": {
+                            "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractBatchSignoffId\": $output } }"
+                          },
+                          "metadata": {
+                            "activityType": "JsInvoke",
+                            "displayName": "Extract BatchSignoff UUID",
+                            "fullName": "JsInvoke"
+                          }
                         }
                       },
                       {
                         "Assign_NewBatchSignoffId": {
-                          "set": { "batch_signoff_id": "${$context.outputs.Javascript_ExtractBatchSignoffId}" },
-                          "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-                          "metadata": { "activityType": "Assign", "displayName": "Set batch_signoff_id from create", "fullName": "Assign", "isTransparent": false }
+                          "set": {
+                            "batch_signoff_id": "${$context.outputs.Javascript_ExtractBatchSignoffId}"
+                          },
+                          "export": {
+                            "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+                          },
+                          "metadata": {
+                            "activityType": "Assign",
+                            "displayName": "Set batch_signoff_id from create",
+                            "fullName": "Assign",
+                            "isTransparent": false
+                          }
                         }
                       }
                     ],
@@ -280,8 +362,14 @@
                   }
                 }
               ],
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"If_BatchSignoffNew\": $output } }" },
-              "metadata": { "activityType": "If", "displayName": "Create BatchSignoff if new (idempotent)", "fullName": "If" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"If_BatchSignoffNew\": $output } }"
+              },
+              "metadata": {
+                "activityType": "If",
+                "displayName": "Create BatchSignoff if new (idempotent)",
+                "fullName": "If"
+              }
             }
           },
           {
@@ -289,13 +377,24 @@
               "response": "${{ batchReference: $workflow.input.batchReference, batchSignoffId: $context.variables.batch_signoff_id, stats: { alertCount: $context.variables.partition_result.alertCount, sampleRatePct: $workflow.input.sampleRatePct, sampledCount: $context.variables.partition_result.sampledCount, highValueCount: $context.variables.partition_result.highValueCount, pulledCount: $context.variables.partition_result.pulledCount, bulkCount: $context.variables.partition_result.bulkCount }, pulled: $context.variables.partition_result.pulled, bulk: $context.variables.partition_result.bulk }}",
               "markJobAsFailed": false,
               "then": "end",
-              "metadata": { "activityType": "Response", "displayName": "Return partition result", "fullName": "Response" }
+              "metadata": {
+                "activityType": "Response",
+                "displayName": "Return partition result",
+                "fullName": "Response"
+              }
             }
           }
         ],
-        "metadata": { "activityType": "Sequence", "displayName": "Sequence", "fullName": "Sequence" }
+        "metadata": {
+          "activityType": "Sequence",
+          "displayName": "Sequence",
+          "fullName": "Sequence"
+        }
       }
     }
   ],
-  "evaluate": { "mode": "strict", "language": "javascript" }
+  "evaluate": {
+    "mode": "strict",
+    "language": "javascript"
+  }
 }

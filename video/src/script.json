@@ -1,0 +1,74 @@
+[
+  {
+    "id": "intro",
+    "durationSeconds": 24.1,
+    "audioDelay": 0.6,
+    "text": "Every day, a compliance team drowns in suspicious-activity alerts. A.I. can help them triage the flood, but it can never be the one held accountable. So here's the story of a single alert, and a system built to keep a human in charge. This is Aurora Verdict, inspired by the Bank for International Settlements' Project Aurora."
+  },
+  {
+    "id": "problem",
+    "durationSeconds": 22.9,
+    "audioDelay": 0.4,
+    "text": "Here's the temptation. Let the model quietly close the easy cases, and escalate the scary ones. But a central bank examiner will never accept, the algorithm decided. If you can't show who made the call, and why, the speed means nothing. You need both: the pace of automation, and a person who signs their name to it."
+  },
+  {
+    "id": "batch",
+    "durationSeconds": 31.24,
+    "audioDelay": 0.4,
+    "text": "But here's what most teams get wrong. That flood is mostly low-risk noise, and the easy move is to let software quietly close it. Aurora Verdict auto-sorts it, but never in the dark. A supervisor signs the whole batch, after a sampled five percent, and every transfer above two hundred and fifty thousand ringgit, are pulled for review. The highest-volume risk, with a human name on every call. But some alerts aren't so clear-cut."
+  },
+  {
+    "id": "case",
+    "durationSeconds": 28.65,
+    "audioDelay": 0.4,
+    "text": "So follow one. Cedar Imports, a Malaysian trading company and a customer for years, just wired eighty-five thousand ringgit, in two transfers, to a brand-new overseas counterparty it has never paid before. Screening comes back clean: no sanctions, nothing on a watchlist. So which is it, ordinary trade finance, or the first move in something worse? Honestly, it's a coin toss."
+  },
+  {
+    "id": "orchestration",
+    "durationSeconds": 12.74,
+    "audioDelay": 0.4,
+    "text": "So the alert begins its journey through a UiPath Maestro process. A long-running orchestration, where every step it passes through is on the record, and nothing happens off the books."
+  },
+  {
+    "id": "studio",
+    "durationSeconds": 15.62,
+    "audioDelay": 0.4,
+    "text": "And this isn't a slide. It's the actual project, built in UiPath Studio: the triage agent, the deterministic challenger, the decision gate, and the audit writer. Real, versioned, deployable parts."
+  },
+  {
+    "id": "verdict",
+    "durationSeconds": 31.97,
+    "audioDelay": 0.4,
+    "text": "First stop, the triage agent, running on Claude. It reads the whole evidence bundle and proposes a risk tier, medium, but it's honest about the doubt: only sixty-two percent confident. Before anyone leans on that, the input is screened for prompt-injection, and every citation is checked against the real evidence. And it's no fluke: across the full golden test set, its calls matched the expected answer, eight out of eight."
+  },
+  {
+    "id": "challenger",
+    "durationSeconds": 28.55,
+    "audioDelay": 0.4,
+    "text": "Now the part that makes this defensible. The agent does not get the final say. A bank of deterministic detectors runs on its own: sanctions, politically-exposed persons, structuring, high-risk jurisdiction, and watchlist. If even one fires, the case is force-escalated, no matter how confident the model was. Rules can overrule the A.I. The A.I. can never silence the rules."
+  },
+  {
+    "id": "gate",
+    "durationSeconds": 21.54,
+    "audioDelay": 0.4,
+    "text": "But here, no rule fires. The detectors stay quiet, and the model simply isn't sure. And this is the moment that matters. Instead of guessing, the whole orchestration stops, and waits, for a human analyst to weigh in. Thirty seconds on the clock, while every other step took milliseconds."
+  },
+  {
+    "id": "outcomes",
+    "durationSeconds": 24,
+    "audioDelay": 0.4,
+    "text": "Now it's the analyst's call. They might agree: medium risk, standard monitoring, closed. Or override the agent entirely, and escalate for enhanced due diligence. Two endings, but the same guarantee: their name, their reasoning, and the moment they decided, written into a record that can never be quietly changed."
+  },
+  {
+    "id": "claudecode",
+    "durationSeconds": 14.2,
+    "audioDelay": 0.4,
+    "text": "And one more thing worth knowing. The agent, the Maestro orchestration, the detectors, the audit trail, even the video you're watching right now, were all built, end to end, with Claude Code."
+  },
+  {
+    "id": "close",
+    "durationSeconds": 23.3,
+    "audioDelay": 0.4,
+    "text": "That's the whole idea: faster triage, without ever giving up the paper trail. So when a central bank examiner asks, two years from now, who decided this, and why, the answer is right there, and it cannot be rewritten. Aurora Verdict: the A.I. proposes, the rules challenge, a human signs, and the record is permanent."
+  }
+]

@@ -1,0 +1,9 @@
+node_modules/
+out/
+.env
+.env.local
+*.local
+audio/*.mp3
+!audio/.gitkeep
+
+public/footage/

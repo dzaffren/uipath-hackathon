@@ -1,0 +1,23 @@
+{
+  "name": "aurora-verdict-video",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Aurora Verdict submission demo video (Remotion + ElevenLabs)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts AuroraVerdict out/aurora-verdict.mp4 --codec=h264",
+    "still": "remotion still src/index.ts AuroraVerdict out/frame.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.484",
+    "@remotion/gif": "^4.0.484",
+    "@remotion/google-fonts": "^4.0.484",
+    "@remotion/transitions": "^4.0.484",
+    "@types/react": "^18.3.1",
+    "music-metadata": "^11.13.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.484"
+  }
+}

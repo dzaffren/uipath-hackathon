@@ -11,14 +11,38 @@
           "document": {
             "type": "object",
             "properties": {
-              "validated_citations":    { "type": "array",   "default": [] },
-              "has_unverified":         { "type": "boolean", "default": false },
-              "assessment_id":          { "type": "string",  "default": "" },
-              "red_flags":              { "type": "array",   "default": [] },
-              "final_risk_tier":        { "type": "string",  "default": "" },
-              "tier_was_forced":        { "type": "boolean", "default": false },
-              "original_proposed_tier": { "type": "string",  "default": "" },
-              "route":                  { "type": "string",  "default": "medium_signoff" }
+              "validated_citations": {
+                "type": "array",
+                "default": []
+              },
+              "has_unverified": {
+                "type": "boolean",
+                "default": false
+              },
+              "assessment_id": {
+                "type": "string",
+                "default": ""
+              },
+              "red_flags": {
+                "type": "array",
+                "default": []
+              },
+              "final_risk_tier": {
+                "type": "string",
+                "default": ""
+              },
+              "tier_was_forced": {
+                "type": "boolean",
+                "default": false
+              },
+              "original_proposed_tier": {
+                "type": "string",
+                "default": ""
+              },
+              "route": {
+                "type": "string",
+                "default": "medium_signoff"
+              }
             },
             "title": "Variables"
           }
@@ -32,11 +56,21 @@
       "document": {
         "type": "object",
         "properties": {
-          "alert_id":        { "type": "string" },
-          "evidence_bundle": { "type": "array"  },
-          "agent_output":    { "type": "object" }
+          "alert_id": {
+            "type": "string"
+          },
+          "evidence_bundle": {
+            "type": "array"
+          },
+          "agent_output": {
+            "type": "object"
+          }
         },
-        "required": ["alert_id", "evidence_bundle", "agent_output"],
+        "required": [
+          "alert_id",
+          "evidence_bundle",
+          "agent_output"
+        ],
         "title": "Inputs"
       }
     }
@@ -47,13 +81,27 @@
       "document": {
         "type": "object",
         "properties": {
-          "validated_citations":    { "type": "array"   },
-          "has_unverified":         { "type": "boolean" },
-          "red_flags":              { "type": "array"   },
-          "final_risk_tier":        { "type": "string"  },
-          "tier_was_forced":        { "type": "boolean" },
-          "original_proposed_tier": { "type": "string"  },
-          "route":                  { "type": "string"  }
+          "validated_citations": {
+            "type": "array"
+          },
+          "has_unverified": {
+            "type": "boolean"
+          },
+          "red_flags": {
+            "type": "array"
+          },
+          "final_risk_tier": {
+            "type": "string"
+          },
+          "tier_was_forced": {
+            "type": "boolean"
+          },
+          "original_proposed_tier": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          }
         },
         "title": "Outputs"
       }
@@ -66,9 +114,18 @@
           {
             "WorkflowStart": {
               "set": "${Object.entries($workflow.definition?.document?.metadata?.variables?.schema?.document?.properties || {}).reduce((acc, [name, def]) => ({ ...acc, [name]: def?.default }), {}) }",
-              "output": { "as": "${$input}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Workflow start", "fullName": "Assign", "isTransparent": true }
+              "output": {
+                "as": "${$input}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Workflow start",
+                "fullName": "Assign",
+                "isTransparent": true
+              }
             }
           },
           {
@@ -80,53 +137,64 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateAndCheck\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Validate citations against bundle", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ValidateAndCheck\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Validate citations against bundle",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_ValidatedCitations": {
-              "set": { "validated_citations": "${$context.outputs.Javascript_ValidateAndCheck.validated_citations}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store validated citations", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "validated_citations": "${$context.outputs.Javascript_ValidateAndCheck.validated_citations}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store validated citations",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "Assign_HasUnverified": {
-              "set": { "has_unverified": "${$context.outputs.Javascript_ValidateAndCheck.has_unverified}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store has_unverified flag", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "has_unverified": "${$context.outputs.Javascript_ValidateAndCheck.has_unverified}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store has_unverified flag",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
             "CreateEntityRecordCurated_AgentAssessment": {
-              "call": "UiPath.IntSvc",
-              "with": {
-                "Connector": "uipath-uipath-dataservice",
-                "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                "Method": "POST",
-                "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                "QueryParameters": {},
-                "PathParameters": { "entityName": "AgentAssessment" },
-                "BodyParameters": {
-                  "AlertLink": "${$workflow.input.alert_id}",
-                  "ProposedRiskTier": "${$context.outputs.Javascript_ValidateAndCheck.proposed_risk_tier_number_id}",
-                  "Confidence": "${$context.outputs.Javascript_ValidateAndCheck.confidence}",
-                  "Recommendation": "${$context.outputs.Javascript_ValidateAndCheck.recommendation_number_id}",
-                  "Rationale": "${$context.outputs.Javascript_ValidateAndCheck.rationale}",
-                  "CitedEvidenceIds": "${$context.outputs.Javascript_ValidateAndCheck.cited_evidence_ids_json}",
-                  "ModelName": "anthropic.claude-sonnet-4-6"
+              "run": {
+                "script": {
+                  "code": "return { content: { Id: 'a0000003-0000-4000-8000-000000000003', id: 'a0000003-0000-4000-8000-000000000003' } };",
+                  "language": "javascript",
+                  "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_AgentAssessment\": $output } }" },
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_AgentAssessment\": $output } }"
+              },
               "metadata": {
-                "fullName": "Connector",
-                "activityType": "Connector",
-                "displayName": "Create AgentAssessment record",
-                "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                "assemblyQualifiedName": "Connector",
-                "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                "activityType": "JsInvoke",
+                "displayName": "Create AgentAssessment record (offline stub)",
+                "fullName": "JsInvoke"
               }
             }
           },
@@ -139,15 +207,30 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractAssessmentId\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Extract AgentAssessment UUID", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_ExtractAssessmentId\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Extract AgentAssessment UUID",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_AssessmentId": {
-              "set": { "assessment_id": "${$context.outputs.Javascript_ExtractAssessmentId}" },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store assessment_id", "fullName": "Assign", "isTransparent": false }
+              "set": {
+                "assessment_id": "${$context.outputs.Javascript_ExtractAssessmentId}"
+              },
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store assessment_id",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
@@ -166,29 +249,20 @@
                           "try": [
                             {
                               "CreateEntityRecordCurated_CitationCheck": {
-                                "call": "UiPath.IntSvc",
-                                "with": {
-                                  "Connector": "uipath-uipath-dataservice",
-                                  "ConnectionId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                  "ConnectionResourceId": "4cd9774f-3809-4ed7-9fe6-23835f2434ee",
-                                  "Method": "POST",
-                                  "Endpoint": "/v2/{entityName}/CreateEntityRecord",
-                                  "QueryParameters": {},
-                                  "PathParameters": { "entityName": "CitationCheck" },
-                                  "BodyParameters": {
-                                    "AlertLink": "${$workflow.input.alert_id}",
-                                    "CitedEvidenceId": "${$citationItem.evidence_id}",
-                                    "CheckOutcome": "${$citationItem.check_outcome_number_id}"
+                                "run": {
+                                  "script": {
+                                    "code": "return { content: { Id: 'a0000004-0000-4000-8000-000000000004', id: 'a0000004-0000-4000-8000-000000000004' } };",
+                                    "language": "javascript",
+                                    "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                   }
                                 },
-                                "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_CitationCheck\": $output } }" },
+                                "export": {
+                                  "as": "{ ...$context, outputs: { ...$context?.outputs, \"CreateEntityRecordCurated_CitationCheck\": $output } }"
+                                },
                                 "metadata": {
-                                  "fullName": "Connector",
-                                  "activityType": "Connector",
-                                  "displayName": "Create CitationCheck record",
-                                  "uiPathActivityTypeId": "dfd2bc7a-ca4b-3316-8a1f-57c9e106dfbf",
-                                  "assemblyQualifiedName": "Connector",
-                                  "configuration": "{\"essentialConfiguration\":{\"connectorVersion\":\"\",\"executionType\":null,\"customFieldsRequestDetails\":null,\"instanceParameters\":{\"version\":\"1.0.0\",\"connectorKey\":\"uipath-uipath-dataservice\",\"activityType\":\"Curated\",\"objectName\":\"CreateEntityRecordCurated\",\"httpMethod\":\"POST\",\"operation\":null,\"eventOperation\":null,\"eventMode\":null,\"connectorObjects\":null,\"previewEndpoint\":null},\"objectName\":\"CreateEntityRecordCurated\",\"operation\":null,\"packageVersion\":\"1.0.0\",\"httpMethod\":\"POST\",\"path\":\"/v2/{entityName}/CreateEntityRecord\",\"unifiedTypesCompatible\":true,\"savedJitInputFieldId\":\"in_CreateEntityRecordCurated\"}}"
+                                  "activityType": "JsInvoke",
+                                  "displayName": "Create CitationCheck record (offline stub)",
+                                  "fullName": "JsInvoke"
                                 }
                               }
                             }
@@ -205,14 +279,26 @@
                                       "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                                     }
                                   },
-                                  "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_LogCitationError\": $output } }" },
-                                  "metadata": { "activityType": "JsInvoke", "displayName": "Log citation insert skip", "fullName": "JsInvoke" }
+                                  "export": {
+                                    "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_LogCitationError\": $output } }"
+                                  },
+                                  "metadata": {
+                                    "activityType": "JsInvoke",
+                                    "displayName": "Log citation insert skip",
+                                    "fullName": "JsInvoke"
+                                  }
                                 }
                               }
                             ]
                           },
-                          "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Try_Catch_2\": $output } }" },
-                          "metadata": { "activityType": "TryCatch", "displayName": "Insert CitationCheck (idempotent)", "fullName": "TryCatch" }
+                          "export": {
+                            "as": "{ ...$context, outputs: { ...$context?.outputs, \"Try_Catch_2\": $output } }"
+                          },
+                          "metadata": {
+                            "activityType": "TryCatch",
+                            "displayName": "Insert CitationCheck (idempotent)",
+                            "fullName": "TryCatch"
+                          }
                         }
                       }
                     ],
@@ -222,8 +308,14 @@
                   }
                 }
               ],
-              "output": { "as": "${$context.outputs.For_Each_2}" },
-              "metadata": { "activityType": "ForEach", "displayName": "Insert CitationCheck rows", "fullName": "ForEach" }
+              "output": {
+                "as": "${$context.outputs.For_Each_2}"
+              },
+              "metadata": {
+                "activityType": "ForEach",
+                "displayName": "Insert CitationCheck rows",
+                "fullName": "ForEach"
+              }
             }
           },
           {
@@ -235,8 +327,14 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Sanctions\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Detect sanctions match", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Sanctions\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Detect sanctions match",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
@@ -248,8 +346,14 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Pep\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Detect PEP match", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Pep\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Detect PEP match",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
@@ -261,8 +365,14 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Structuring\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Detect structuring pattern", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Structuring\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Detect structuring pattern",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
@@ -274,8 +384,14 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Jurisdiction\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Detect high-risk jurisdiction", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Jurisdiction\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Detect high-risk jurisdiction",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
@@ -287,8 +403,14 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Watchlist\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Detect internal watchlist match", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Detect_Watchlist\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Detect internal watchlist match",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
@@ -300,21 +422,34 @@
                   "arguments": "${{ \"$context\": $context, \"$workflow\": $workflow, \"$input\": $input }}"
                 }
               },
-              "export": { "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Compute_Route\": $output } }" },
-              "metadata": { "activityType": "JsInvoke", "displayName": "Compute route and override fields", "fullName": "JsInvoke" }
+              "export": {
+                "as": "{ ...$context, outputs: { ...$context?.outputs, \"Javascript_Compute_Route\": $output } }"
+              },
+              "metadata": {
+                "activityType": "JsInvoke",
+                "displayName": "Compute route and override fields",
+                "fullName": "JsInvoke"
+              }
             }
           },
           {
             "Assign_RouteVars": {
               "set": {
-                "red_flags":              "${$context.outputs.Javascript_Compute_Route.red_flags}",
-                "final_risk_tier":        "${$context.outputs.Javascript_Compute_Route.final_risk_tier}",
-                "tier_was_forced":        "${$context.outputs.Javascript_Compute_Route.tier_was_forced}",
+                "red_flags": "${$context.outputs.Javascript_Compute_Route.red_flags}",
+                "final_risk_tier": "${$context.outputs.Javascript_Compute_Route.final_risk_tier}",
+                "tier_was_forced": "${$context.outputs.Javascript_Compute_Route.tier_was_forced}",
                 "original_proposed_tier": "${$context.outputs.Javascript_Compute_Route.original_proposed_tier}",
-                "route":                  "${$context.outputs.Javascript_Compute_Route.route}"
+                "route": "${$context.outputs.Javascript_Compute_Route.route}"
               },
-              "export": { "as": "{ ...$context, variables: { ...$context.variables, ...$output } }" },
-              "metadata": { "activityType": "Assign", "displayName": "Store routing variables", "fullName": "Assign", "isTransparent": false }
+              "export": {
+                "as": "{ ...$context, variables: { ...$context.variables, ...$output } }"
+              },
+              "metadata": {
+                "activityType": "Assign",
+                "displayName": "Store routing variables",
+                "fullName": "Assign",
+                "isTransparent": false
+              }
             }
           },
           {
@@ -322,13 +457,24 @@
               "response": "${{ validated_citations: $context.variables.validated_citations, has_unverified: $context.variables.has_unverified, red_flags: $context.variables.red_flags, final_risk_tier: $context.variables.final_risk_tier, tier_was_forced: $context.variables.tier_was_forced, original_proposed_tier: $context.variables.original_proposed_tier, route: $context.variables.route }}",
               "markJobAsFailed": false,
               "then": "end",
-              "metadata": { "activityType": "Response", "displayName": "Return gate result", "fullName": "Response" }
+              "metadata": {
+                "activityType": "Response",
+                "displayName": "Return gate result",
+                "fullName": "Response"
+              }
             }
           }
         ],
-        "metadata": { "activityType": "Sequence", "displayName": "Sequence", "fullName": "Sequence" }
+        "metadata": {
+          "activityType": "Sequence",
+          "displayName": "Sequence",
+          "fullName": "Sequence"
+        }
       }
     }
   ],
-  "evaluate": { "mode": "strict", "language": "javascript" }
+  "evaluate": {
+    "mode": "strict",
+    "language": "javascript"
+  }
 }
