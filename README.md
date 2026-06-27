@@ -61,6 +61,10 @@ Six UiPath projects in one solution (`AuroraVerdict.uipx`):
 | `AuditWriteApi`           | API Workflow | Audit record writer (append-only)  |
 | `BatchPartitionApi`       | API Workflow | Low-risk sampling + batch sign-off |
 
+**Agent type:** both `TriageAgent` and `ChallengerAgent` are **low-code agents built in UiPath Agent Builder** (not coded agents) — each configured with the `anthropic.claude-sonnet-4-6` model, a structured system prompt, and JSON input/output contracts.
+
+Beyond these seven projects, the solution uses **Action Center** for the human sign-off / override / batch-approval tasks and **Data Fabric** for the append-only `DecisionRecord` audit store. Full UiPath component set: **Maestro (BPMN) · Agent Builder · API Workflows · Action Center · Data Fabric**.
+
 ---
 
 ## Evaluating the project
