@@ -49,7 +49,7 @@ BatchPartitionApi            Analyst HITL           ChallengerAgent
 AuditWriteApi ─────────── writes DecisionRecord per alert
 ```
 
-Six UiPath projects in one solution (`AuroraVerdict.uipx`):
+Seven UiPath projects in one solution (`AuroraVerdict.uipx`):
 
 | Project                   | Type         | Role                               |
 | ------------------------- | ------------ | ---------------------------------- |

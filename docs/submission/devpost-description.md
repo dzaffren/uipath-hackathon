@@ -62,8 +62,8 @@ resolves _upward_ — protecting against the catastrophic false negative.
 
 ## How we built it
 
-Six load-bearing UiPath components, packaged as one deployable solution
-(`AuroraVerdict.uipx`):
+Seven UiPath projects in one deployable solution (`AuroraVerdict.uipx`),
+backed by Action Center and Data Fabric:
 
 | Component                              | UiPath product    | Role                                                                          |
 | -------------------------------------- | ----------------- | ----------------------------------------------------------------------------- |
